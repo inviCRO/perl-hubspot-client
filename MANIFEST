@@ -1,0 +1,4 @@
+lib/HubSpot/Client.pm
+lib/HubSpot/Deal.pm
+MANIFEST
+t/001Deals.t
