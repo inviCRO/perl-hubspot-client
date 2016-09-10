@@ -32,23 +32,22 @@ sub BUILD
 sub deals
 {
 	my $self = shift;
+	my $count = shift;
 	
-	my $results = $json->decode($self->get('/deals/v1/deal/recent/modified', { count => 1 }));
+	$count = 100 unless defined $count;									# Max allowed by the API even though the doc says 500
+	
+	my $results = $json->decode($self->get('/deals/v1/deal/recent/modified', { count => $count }));
 	my $deals = $results->{'results'};
 	my $deal_objects = [];
 	foreach my $deal (@$deals)
 	{
-		push(@$deal_objects, HubSpot::Deal->new({json => $deal}));
+		my $deal_object = HubSpot::Deal->new({json => $deal});
+		push(@$deal_objects, $deal_object);
 	}
 	
-	foreach my $deal (@$deal_objects)
-	{
-		print STDERR $deal->name."\n";
-	}
-	
-	return 1;
+	return $deal_objects;
 }
-	
+		
 sub get
 {
 	my $self = shift;
@@ -58,6 +57,7 @@ sub get
 	$params = {} unless defined $params;								# In case no parameters have been specified
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
+	print STDERR $url."\n";
 	$self->rest_client->GET($url);										# Get it
 	$self->checkResponse();												# Check it was successful
 	
