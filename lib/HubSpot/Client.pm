@@ -9,6 +9,7 @@ use REST::Client;
 use Data::Dumper;
 use JSON;
 use HubSpot::Deal;
+use HubSpot::Owner;
 
 # Make us a class
 use Class::Tiny qw(rest_client),
@@ -48,6 +49,21 @@ sub deals
 	return $deal_objects;
 }
 		
+sub owners
+{
+	my $self = shift;
+
+	my $owners = $json->decode($self->get('/owners/v2/owners'));
+	my $owner_objects = [];
+	foreach my $owner (@$owners)
+	{
+		my $owner_object = HubSpot::Owner->new({json => $owner});
+		push(@$owner_objects, $owner_object);
+	}
+	
+	return $owner_objects;
+}
+			
 sub get
 {
 	my $self = shift;

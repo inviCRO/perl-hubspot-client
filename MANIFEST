@@ -1,4 +1,6 @@
 lib/HubSpot/Client.pm
 lib/HubSpot/Deal.pm
+lib/HubSpot/JSONBackedObject.pm
 MANIFEST
 t/001Deals.t
+t/002Owners.t

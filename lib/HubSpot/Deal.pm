@@ -11,30 +11,11 @@ use Class::Tiny qw(json),
 {
 		# Default variables in here
 };
-
-# Global variables
-#my $json = undef;
-
-sub BUILD
-{
-	my ($self, $args) = @_;
-	
-	if(defined($args->{'json'}))
-	{
-		# Not actually JSON but a perl object derived from the JSON response
-		$self->json($args->{'json'});
-	}
-	else
-	{
-		die "Must specify 'json' argument to HubSpot::Deal::new()";
-	}
-}
+use parent 'HubSpot::JSONBackedObject';
 
 sub name
 {
 	my $self = shift;
-	
-#	print STDERR Data::Dumper->Dump([$json->{'properties'}]);
 	
 	return $self->json->{'properties'}->{'dealname'}->{'value'};
 }
@@ -46,4 +27,11 @@ sub id
 	return $self->json->{'dealId'};
 }
 
+sub logMeeting()
+{
+	my $self = shift;
+	my $content = shift;
+	my $time = shift;
+}
+	
 1;
