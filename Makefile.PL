@@ -11,5 +11,6 @@ WriteMakefile(
 		"Test::More" => "1",
 		"REST::Client" => "273",
 		"JSON" => "2.61",
+		"Error" => "0.17"
     }
 );

@@ -37,7 +37,7 @@ sub deals
 	
 	$count = 100 unless defined $count;									# Max allowed by the API even though the doc says 500
 	
-	my $results = $json->decode($self->get('/deals/v1/deal/recent/modified', { count => $count }));
+	my $results = $json->decode($self->_get('/deals/v1/deal/recent/modified', { count => $count }));
 	my $deals = $results->{'results'};
 	my $deal_objects = [];
 	foreach my $deal (@$deals)
@@ -53,7 +53,7 @@ sub owners
 {
 	my $self = shift;
 
-	my $owners = $json->decode($self->get('/owners/v2/owners'));
+	my $owners = $json->decode($self->_get('/owners/v2/owners'));
 	my $owner_objects = [];
 	foreach my $owner (@$owners)
 	{
@@ -63,8 +63,15 @@ sub owners
 	
 	return $owner_objects;
 }
+
+sub logMeeting
+{
+	my $self = shift;
+	my $deal = shift;
+	my $date = shift;
+}	
 			
-sub get
+sub _get
 {
 	my $self = shift;
 	my $path = shift;
@@ -75,12 +82,12 @@ sub get
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
 	print STDERR $url."\n";
 	$self->rest_client->GET($url);										# Get it
-	$self->checkResponse();												# Check it was successful
+	$self->_checkResponse();											# Check it was successful
 	
 	return $self->rest_client->responseContent();						# return the result
 }
 	
-sub put
+sub _put
 {
 	my $self = shift;
 	my $path = shift;
@@ -91,12 +98,12 @@ sub put
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
 	$self->rest_client->POST($url, $content);							# Get it
-	$self->checkResponse();												# Check it was successful
+	$self->_checkResponse();											# Check it was successful
 	
 	return $self->rest_client->responseContent();
 }
 	
-sub checkResponse
+sub _checkResponse
 {
 	my $self = shift;
 	

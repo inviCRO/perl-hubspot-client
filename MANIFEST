@@ -4,3 +4,4 @@ lib/HubSpot/JSONBackedObject.pm
 MANIFEST
 t/001Deals.t
 t/002Owners.t
+t/003Engagement.t
