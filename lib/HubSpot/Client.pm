@@ -29,6 +29,15 @@ sub BUILD
 	
 	# Create ourselves a rest client to use
 	$self->rest_client(REST::Client->new({ timeout => 20, host => $api_url, follow => 1 }));
+	
+	if(length($self->{'api_key'}) > 0 && $self->{'api_key'} !~ /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/)
+	{
+		die("api_key doesn't look right. Should be a GUID like '6a2f41a3-c54c-fce8-32d2-0324e1c32e22'. You specified '".$self->{'api_key'}."'. To use the HubSpot demo account, don't specify api_key at all.");
+	}
+	if(length($self->{'api_key'}) < 1)
+	{
+		$self->{'api_key'} = 'demo';
+	}
 }
 
 sub deals_recently_modified
@@ -100,7 +109,7 @@ sub _get
 	$params = {} unless defined $params;								# In case no parameters have been specified
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-	#print STDERR $url."\n";
+	print STDERR $url."\n";
 	$self->rest_client->GET($url);										# Get it
 	$self->_checkResponse();											# Check it was successful
 	
