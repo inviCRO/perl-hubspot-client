@@ -62,7 +62,7 @@ sub lastModifiedDateTime
 {
 	my $self = shift;
 	
-	$self->{'lastModifiedDateTime'} = DateTime->from_epoch($self->json->{'properties'}->{'lastmodifieddate'}->{'value'});
+	$self->{'lastModifiedDateTime'} = DateTime->from_epoch(epoch => $self->json->{'properties'}->{'lastmodifieddate'}->{'value'}/1000);
 	
 	return $self->{'lastModifiedDateTime'};
 }
