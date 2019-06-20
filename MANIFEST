@@ -3,7 +3,8 @@ lib/HubSpot/Contact.pm
 lib/HubSpot/Deal.pm
 lib/HubSpot/JSONBackedObject.pm
 MANIFEST
-t/001Deals.t
-t/002Owners.t
-t/003Engagement.t
+t/001Client.t
+t/002Deals.t
+t/003Owners.t
+t/004Engagement.t
 t/004Contacts.t
