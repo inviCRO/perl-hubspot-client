@@ -6,7 +6,9 @@ use Data::Dumper;
 
 BEGIN {}
 
-my $client = HubSpot::Client->new();
+my $hub_id = $ENV{'HUBSPOT_HUB_ID'};
+my $hub_api_key = $ENV{'HUBSPOT_API_KEY'};
+my $client = HubSpot::Client->new({ api_key => $hub_api_key, hub_id => $hub_id });
 
 my $deals = $client->deals_recently_modified(3);
 # I'll be happy if it didn't crash

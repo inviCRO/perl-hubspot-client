@@ -100,7 +100,7 @@ sub _get
 	$params = {} unless defined $params;								# In case no parameters have been specified
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-	print STDERR $url."\n";
+	#print STDERR $url."\n";
 	$self->rest_client->GET($url);										# Get it
 	$self->_checkResponse();											# Check it was successful
 	
