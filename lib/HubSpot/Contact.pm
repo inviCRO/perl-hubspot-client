@@ -52,7 +52,7 @@ sub primaryEmail
 		die("Couldn't find primary email address in contact. JSON retrieved from API:\n".Data::Dumper->Dump([$self->json]));
 	} 
 	
-	return $self->json->{'vid'};
+	return $self->{'primaryEmail'};
 }
 
 1;

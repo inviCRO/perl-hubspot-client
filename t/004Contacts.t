@@ -21,8 +21,8 @@ my $contact = $$contacts[0];
 ok($contact->id, "Checking contact ID is populated - '".$contact->id."'");
 diag(Data::Dumper->Dump([$contact]));
 
-#ok($contact->firstName, "Checking contact first name is populated - '".$contact->firstName."'");
-#ok($contact->lastName, "Checking contact ID is populated - '".$contact->lastName."'");
-ok($contact->primaryEmail, "Checking contact name is populated - '".$contact->primaryEmail."'");
+my $username = qr/[a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?/;
+my $domain   = qr/[a-z0-9.-]+/;
+ok($contact->primaryEmail =~ /^$username\@$domain$/, "Checking contact email is populated - '".$contact->primaryEmail."'");
 
 done_testing();
