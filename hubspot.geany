@@ -15,6 +15,7 @@ indent_mode=2
 [project]
 name=Hubspot::Client
 base_path=/home/igibbs/Dropbox/Work/Attono/dev/perl-hubspot-client
+description=
 
 [long line marker]
 long_line_behaviour=1
@@ -22,15 +23,21 @@ long_line_column=72
 
 [files]
 current_page=0
-FILE_NAME_0=0;Perl;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Flib%2FAttono%2FWebHooks.pm;0;4
-FILE_NAME_1=2348;YAML;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Fconfig.yml;0;4
-FILE_NAME_2=476;Perl;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Flib%2FAttono%2FWebHooks%2FValidate.pm;0;4
-FILE_NAME_3=348;Perl;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Fbin%2Fpage_token.psgi;0;4
-FILE_NAME_4=13435;Perl;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Flib%2FAttono%2FWebsite.pm;0;4
-FILE_NAME_5=440;Perl;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Fbin%2Fmessages.pl;0;4
-FILE_NAME_6=29;None;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Fwebsite.log4j;0;4
-FILE_NAME_7=445;Perl;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Fbin%2Fpushbullet.pl;0;4
-FILE_NAME_8=520;None;0;EUTF-8;1;1;1;%2Fhome%2Figibbs%2FDropbox%2FWork%2FAttono%2Fdev%2Fattono-website%2Fbin%2Fextended_access_token.txt;0;4
+FILE_NAME_0=255;Perl;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Ft%2F004Contacts.t;0;4
+FILE_NAME_1=0;None;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Ft%2F003Engagement.t;0;4
+FILE_NAME_2=0;None;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Ft%2F002Owners.t;0;4
+FILE_NAME_3=670;None;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Ft%2F001Deals.t;0;4
+FILE_NAME_4=0;Perl;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Flib%2FHubSpot%2FOwner.pm;0;4
+FILE_NAME_5=0;Perl;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Flib%2FHubSpot%2FJSONBackedObject.pm;0;4
+FILE_NAME_6=0;Perl;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Flib%2FHubSpot%2FEngagement.pm;0;4
+FILE_NAME_7=0;Perl;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Flib%2FHubSpot%2FDeal.pm;0;4
+FILE_NAME_8=1121;Perl;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Flib%2FHubSpot%2FContact.pm;0;4
+FILE_NAME_9=0;Perl;0;EUTF-8;1;1;0;%2Fhome%2Figibbs%2Flocaldev%2Fperl-hubspot-client%2Flib%2FHubSpot%2FClient.pm;0;4
 
 [VTE]
 last_dir=/home/igibbs
+
+[editor]
+line_wrapping=false
+line_break_column=72
+auto_continue_multiline=true
