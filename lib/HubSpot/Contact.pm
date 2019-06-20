@@ -7,8 +7,8 @@ use strict;
 use Data::Dumper;
 
 # Make us a class
-use subs qw(id);
-use Class::Tiny qw(id),
+use subs qw(id primaryEmail);
+use Class::Tiny qw(id primaryEmail),
 {
 		# Default variables in here
 };
@@ -24,6 +24,33 @@ sub name
 sub id
 {
 	my $self = shift;
+	
+	return $self->json->{'vid'};
+}
+
+sub primaryEmail
+{
+	my $self = shift;
+	
+	my $profiles = $self->json->{'identity-profiles'};
+	my $first_profile = $$profiles[0];						# other profiles may exist if it is a merged contact
+	my $identities = $first_profile->{'identities'};
+	my $found_email;
+	foreach my $identity (@$identities)
+	{
+		if($identity->{'is-primary'} && $identity->{'type'} eq "EMAIL")
+		{
+			$found_email = $identity->{'value'};
+		}
+	}
+	if($found_email)
+	{
+		$self->{'primaryEmail'} = $found_email;
+	}
+	else
+	{
+		die("Couldn't find primary email address in contact. JSON retrieved from API:\n".Data::Dumper->Dump([$self->json]));
+	} 
 	
 	return $self->json->{'vid'};
 }

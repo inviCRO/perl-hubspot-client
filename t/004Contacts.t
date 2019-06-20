@@ -23,6 +23,6 @@ diag(Data::Dumper->Dump([$contact]));
 
 #ok($contact->firstName, "Checking contact first name is populated - '".$contact->firstName."'");
 #ok($contact->lastName, "Checking contact ID is populated - '".$contact->lastName."'");
-#ok($contact->email, "Checking contact name is populated - '".$contact->email."'");
+ok($contact->primaryEmail, "Checking contact name is populated - '".$contact->primaryEmail."'");
 
 done_testing();

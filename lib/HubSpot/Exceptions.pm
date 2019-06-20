@@ -26,3 +26,9 @@ package UnknownTypeException;
 	sub stringify { my $self = shift; return __PACKAGE__.": ".$self->stacktrace(); }
 1;
 
+package NoPrimaryEmailFoundException;
+	use base qw(Exception);
+	
+	sub stringify { my $self = shift; return __PACKAGE__.": ".$self->stacktrace(); }
+1;
+
