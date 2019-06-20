@@ -8,6 +8,7 @@ use strict;
 use REST::Client;
 use Data::Dumper;
 use JSON;
+use HubSpot::Contact;
 use HubSpot::Deal;
 use HubSpot::Owner;
 
@@ -30,12 +31,12 @@ sub BUILD
 	$self->rest_client(REST::Client->new({ timeout => 20, host => $api_url, follow => 1 }));
 }
 
-sub deals
+sub deals_recently_modified
 {
 	my $self = shift;
 	my $count = shift;
 	
-	$count = 100 unless defined $count;									# Max allowed by the API even though the doc says 500
+	$count = 100 unless defined $count;									# Max allowed by the API
 	
 	my $results = $json->decode($self->_get('/deals/v1/deal/recent/modified', { count => $count }));
 	my $deals = $results->{'results'};
@@ -49,6 +50,25 @@ sub deals
 	return $deal_objects;
 }
 		
+sub contacts
+{
+	my $self = shift;
+	my $count = shift;
+
+	$count = 100 unless defined $count;									# Max allowed by the API
+	
+	my $results = $json->decode($self->_get('/contacts/v1/lists/all/contacts/all', { count => $count }));
+	my $contacts = $results->{'contacts'};
+	my $contact_objects = [];
+	foreach my $contact (@$contacts)
+	{
+		my $contact_object = HubSpot::Contact->new({json => $contact});
+		push(@$contact_objects, $contact_object);
+	}
+	
+	return $contact_objects;
+}
+
 sub owners
 {
 	my $self = shift;

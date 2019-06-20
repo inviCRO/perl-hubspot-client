@@ -8,10 +8,10 @@ BEGIN {}
 
 my $client = HubSpot::Client->new();
 
-my $deals = $client->deals(3);
+my $deals = $client->deals_recently_modified(3);
 # I'll be happy if it didn't crash
 ok(1, "Retrieving deals");
-# Should get 100 back
+# Should get 3 back
 is(scalar(@$deals), 3, "Counting returned number of deals");
 
 # Each one should have a number of well-populated properties
