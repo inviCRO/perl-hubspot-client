@@ -70,18 +70,15 @@ sub contacts
 	my $offset;
 	my $results;
 	my $i = 0;
-	print STDERR "Starting\n";
 	while(!defined($results) || $results->{'has-more'} == 1)
 	{
 		$i++;
 		if($offset)
 		{
-			print STDERR "Call $i\n";
 			$results = $json->decode($self->_get('/contacts/v1/lists/all/contacts/all', { count => $count, vidOffset => $offset }));
 		}
 		else
 		{
-			print STDERR "Call $i\n";
 			$results = $json->decode($self->_get('/contacts/v1/lists/all/contacts/all', { count => $count }));
 		}
 		my $contacts = $results->{'contacts'};
