@@ -17,13 +17,16 @@ is(scalar(@$contacts), 3, "Counting returned number of owners");
 
 # PROPERTIES
 my $contact = $$contacts[0];
-#ok($contact->name, "Checking contact name is populated - '".$contact->name."'");
-ok($contact->id, "Checking contact ID is populated - '".$contact->id."'");
-#~ diag(Data::Dumper->Dump([$contact]));
+like($contact->id, qr/^\d{3,}/, "Checking contact ID is populated - '".$contact->id."'");
+is(length($contact->firstName) > 0, 1, "Checking contact first name is populated - '".$contact->firstName."'");
+is(length($contact->lastName) > 0, 1, "Checking contact last name is populated - '".$contact->lastName."'");
+is(length($contact->company) > 0, 1, "Checking contact company is populated - '".$contact->company."'");
+
+diag(Data::Dumper->Dump([$contact]));
 
 my $username = qr/[a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?/;
 my $domain   = qr/[a-z0-9.-]+/;
-ok($contact->primaryEmail =~ /^$username\@$domain$/, "Checking contact email is populated - '".$contact->primaryEmail."'");
+like($contact->primaryEmail, qr/^$username\@$domain$/, "Checking contact email is populated - '".$contact->primaryEmail."'");
 
 # PAGINATION
 $contacts = $client->contacts(251);
