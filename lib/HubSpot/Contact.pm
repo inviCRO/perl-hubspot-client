@@ -62,7 +62,7 @@ sub lastModifiedDateTime
 {
 	my $self = shift;
 	
-	$self->{'lastModifiedDateTime'} = DateTime->from_epoch(epoch => $self->json->{'properties'}->{'lastmodifieddate'}->{'value'}/1000);
+	$self->{'lastModifiedDateTime'} = DateTime->from_epoch(epoch => $self->json->{'properties'}->{'lastmodifieddate'}->{'value'}/1000, time_zone => 'UTC');
 	
 	return $self->{'lastModifiedDateTime'};
 }
@@ -86,10 +86,7 @@ sub primaryEmail
 	{
 		$self->{'primaryEmail'} = $found_email;
 	}
-	else
-	{
-		die("Couldn't find primary email address in contact. JSON retrieved from API:\n".Data::Dumper->Dump([$self->json]));
-	} 
+	# email isn't a compulsory field - might not be there
 	
 	return $self->{'primaryEmail'};
 }

@@ -21,6 +21,7 @@ like($contact->id, qr/^\d{3,}/, "Checking contact ID is populated - '".$contact-
 is(length($contact->firstName) > 0, 1, "Checking contact first name is populated - '".$contact->firstName."'");
 is(length($contact->lastName) > 0, 1, "Checking contact last name is populated - '".$contact->lastName."'");
 is(length($contact->company) > 0, 1, "Checking contact company is populated - '".$contact->company."'");
+isa_ok($contact->lastModifiedDateTime, 'DateTime', "Checking lastModifiedDateTime is populated - ".$contact->lastModifiedDateTime->iso8601());
 
 diag(Data::Dumper->Dump([$contact]));
 
