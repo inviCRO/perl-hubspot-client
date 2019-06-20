@@ -64,15 +64,38 @@ sub contacts
 	my $self = shift;
 	my $count = shift;
 
-	$count = 100 unless defined $count;									# Max allowed by the API
+	$count = 250 unless defined $count;									# Max allowed by the API
 	
-	my $results = $json->decode($self->_get('/contacts/v1/lists/all/contacts/all', { count => $count }));
-	my $contacts = $results->{'contacts'};
 	my $contact_objects = [];
-	foreach my $contact (@$contacts)
+	my $offset;
+	my $results;
+	my $i = 0;
+	print STDERR "Starting\n";
+	while(!defined($results) || $results->{'has-more'} == 1)
 	{
-		my $contact_object = HubSpot::Contact->new({json => $contact});
-		push(@$contact_objects, $contact_object);
+		$i++;
+		if($offset)
+		{
+			print STDERR "Call $i\n";
+			$results = $json->decode($self->_get('/contacts/v1/lists/all/contacts/all', { count => $count, vidOffset => $offset }));
+		}
+		else
+		{
+			print STDERR "Call $i\n";
+			$results = $json->decode($self->_get('/contacts/v1/lists/all/contacts/all', { count => $count }));
+		}
+		my $contacts = $results->{'contacts'};
+		foreach my $contact (@$contacts)
+		{
+			my $contact_object = HubSpot::Contact->new({json => $contact});
+			push(@$contact_objects, $contact_object);
+		}
+		$offset = $results->{'vid-offset'};
+		if(scalar(@$contact_objects) >= $count)
+		{
+			my @slice = @$contact_objects[0..$count-1]; $contact_objects = \@slice;
+			last;
+		}
 	}
 	
 	return $contact_objects;
