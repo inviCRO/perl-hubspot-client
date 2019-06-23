@@ -40,24 +40,24 @@ sub BUILD
 	}
 }
 
-sub deals_recently_modified
-{
-	my $self = shift;
-	my $count = shift;
+#~ sub deals_recently_modified
+#~ {
+	#~ my $self = shift;
+	#~ my $count = shift;
 	
-	$count = 100 unless defined $count;									# Max allowed by the API
+	#~ $count = 100 unless defined $count;									# Max allowed by the API
 	
-	my $results = $json->decode($self->_get('/deals/v1/deal/recent/modified', { count => $count }));
-	my $deals = $results->{'results'};
-	my $deal_objects = [];
-	foreach my $deal (@$deals)
-	{
-		my $deal_object = HubSpot::Deal->new({json => $deal});
-		push(@$deal_objects, $deal_object);
-	}
+	#~ my $results = $json->decode($self->_get('/deals/v1/deal/recent/modified', { count => $count }));
+	#~ my $deals = $results->{'results'};
+	#~ my $deal_objects = [];
+	#~ foreach my $deal (@$deals)
+	#~ {
+		#~ my $deal_object = HubSpot::Deal->new({json => $deal});
+		#~ push(@$deal_objects, $deal_object);
+	#~ }
 	
-	return $deal_objects;
-}
+	#~ return $deal_objects;
+#~ }
 		
 sub contact_by_id
 {
@@ -107,27 +107,27 @@ sub contacts
 	return $contact_objects;
 }
 
-sub owners
-{
-	my $self = shift;
+#~ sub owners
+#~ {
+	#~ my $self = shift;
 
-	my $owners = $json->decode($self->_get('/owners/v2/owners'));
-	my $owner_objects = [];
-	foreach my $owner (@$owners)
-	{
-		my $owner_object = HubSpot::Owner->new({json => $owner});
-		push(@$owner_objects, $owner_object);
-	}
+	#~ my $owners = $json->decode($self->_get('/owners/v2/owners'));
+	#~ my $owner_objects = [];
+	#~ foreach my $owner (@$owners)
+	#~ {
+		#~ my $owner_object = HubSpot::Owner->new({json => $owner});
+		#~ push(@$owner_objects, $owner_object);
+	#~ }
 	
-	return $owner_objects;
-}
+	#~ return $owner_objects;
+#~ }
 
-sub logMeeting
-{
-	my $self = shift;
-	my $deal = shift;
-	my $date = shift;
-}	
+#~ sub logMeeting
+#~ {
+	#~ my $self = shift;
+	#~ my $deal = shift;
+	#~ my $date = shift;
+#~ }	
 			
 sub _get
 {
