@@ -49,5 +49,11 @@ SKIP: {
 		# first result of the second page. They should have different ids
 		isnt($$contacts[0]->id, $$contacts[250]->id, "Getting successive pages");
 	}
+	
+	# SINGLE CONTACT
+	my $id_contact = $client->contact_by_id($contact->id);
+	ok($id_contact, "Retrieving a specified contact by ID");
+	ok(scalar(keys %{$id_contact->properties} > 10, "Contact should have lots of properties"));
+	is($client->contact_by_id(""), undef, "Not found contact returns undef"); 
 }
 done_testing();
