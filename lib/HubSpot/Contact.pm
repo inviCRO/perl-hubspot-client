@@ -81,6 +81,10 @@ You can create instances of contacts and populate properties like this, but it w
 
 Returns: new instance of this class.
 
+=item getProperty('prop_name')
+
+Retrieve a named property. Might not be set depending upon how this was retrieved. See L</properties>.
+
 =back
 
 =head1 PROPERTIES
@@ -117,6 +121,12 @@ Returns the date and time that the contact was last modified, as a L<DateTime>, 
 =item primaryEmail
 
 Returns the email address set as the primary email, if set, or B<undef> otherwise.
+
+=item properties
+
+Returns a hash reference of all the other properties set on this object. Which properties these are depends not only on what is set in HubSpot for that object, but also how this object was retrieved. If it was retrieved via a call that returns multiple objects, like HubSpot::Client->contacts(), then by default this will only contain the properties listed above (additional properties have to be requested specifically). If it was retrieved on its own, then all properties with a value will be set.
+
+Properties not returned by the API, or returned with not set value, or returned as the empty string will not exist in this hash - such that exists($key) would return false.
 
 =back
 

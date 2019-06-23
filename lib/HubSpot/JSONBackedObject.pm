@@ -32,5 +32,13 @@ sub BUILD
 		}
 	}
 }
+
+sub getProperty
+{
+	my $self = shift;
+	my $key = shift;
+
+	return $self->properties->{$key};
+}
 	
 1;
