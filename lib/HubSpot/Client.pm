@@ -59,6 +59,15 @@ sub deals_recently_modified
 	return $deal_objects;
 }
 		
+sub contact_by_id
+{
+	my $self = shift;
+	my $id = shift;
+	
+	my $result = $json->decode($self->_get("/contacts/v1/contact/vid/$id/profile", { propertyMode => 'value_only' }));
+	return HubSpot::Contact->new({json => $result});
+}
+
 sub contacts
 {
 	my $self = shift;

@@ -7,7 +7,7 @@ use strict;
 use Data::Dumper;
 
 # Make us a class
-use Class::Tiny qw(),
+use Class::Tiny qw(properties),
 {
 	json => undef,
 };
@@ -20,6 +20,16 @@ sub BUILD
 	{
 		# Not actually JSON but a perl object derived from the JSON response
 		$self->json($args->{'json'});
+	}
+	
+	if(defined($self->json->{'properties'}))
+	{	# If this object has a properties key (which probably most of them will)
+		# pull it out as a hash that is a little easier to access
+		$self->properties({});
+		foreach my $property (keys %{$self->json->{'properties'}})
+		{
+			$self->properties->{$property} = $self->json->{'properties'}->{$property}->{'value'} if length($self->json->{'properties'}->{$property}->{'value'}) > 0;
+		}
 	}
 }
 	
