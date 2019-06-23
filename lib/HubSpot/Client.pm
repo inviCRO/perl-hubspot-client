@@ -202,7 +202,7 @@ sub _get
 	return $self->rest_client->responseContent();						# return the result
 }
 	
-sub _put
+sub _post
 {
 	my $self = shift;
 	my $path = shift;
