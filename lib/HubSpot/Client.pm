@@ -12,6 +12,28 @@ use HubSpot::Contact;
 use HubSpot::Deal;
 use HubSpot::Owner;
 
+=pod
+
+=head1 NAME
+
+HubSpot::Client -- An object that can be used to manipulate the HubSpot API
+
+=head1 SYNOPSIS
+
+ my $client = HubSpot::Client->new({ api_key => $hub_api_key }); 
+ # Retrieve 50 contacts
+ my $contacts = $client->contacts(50);
+
+=head1 DESCRIPTION
+
+This module was created for internal needs. At the moment it does what I need it to do, which is to say not very much. However it is a decent enough framework for adding functionality to, so your contributions to extend it to what you need it to do are welcome.
+
+At the moment you can only retrieve read-only representations of contact objects.
+
+=head1 METHODS
+
+=cut
+
 # Make us a class
 use Class::Tiny qw(rest_client),
 {
@@ -40,6 +62,18 @@ sub BUILD
 	}
 }
 
+=pod
+
+=over 4
+
+=item new({api_key => <api_key_for_your hub> }) (constructor)
+
+This class is what you use to perform actions against the API. Once you have created an instance of this object, you can call the other methods below on it. If you don't specify an API key it will connect to the demo HubSpot hub. Since this is shared by everyone on the internet, don't be surprised if you start to see 429 errors getting returned. See L<Rate limits|https://developers.hubspot.com/apps/api_guidelines>. 
+
+Returns: new instance of this class.
+
+=cut
+
 #~ sub deals_recently_modified
 #~ {
 	#~ my $self = shift;
@@ -50,7 +84,7 @@ sub BUILD
 	#~ my $results = $json->decode($self->_get('/deals/v1/deal/recent/modified', { count => $count }));
 	#~ my $deals = $results->{'results'};
 	#~ my $deal_objects = [];
-	#~ foreach my $deal (@$deals)
+		#~ foreach my $deal (@$deals)
 	#~ {
 		#~ my $deal_object = HubSpot::Deal->new({json => $deal});
 		#~ push(@$deal_objects, $deal_object);
@@ -59,14 +93,37 @@ sub BUILD
 	#~ return $deal_objects;
 #~ }
 		
+=item contact_by_id()
+
+Retrieve a single contact record by its ID. Takes one parameter, which is the ID of the contact you want to retrieve. The returned object will contain all the properties set on that object.
+
+ my $contact = $client->contact_by_id('897654');
+
+Returns: L<HubSpot::Contact>, or undef if the contact wasn't found.
+
+=cut
+
 sub contact_by_id
 {
 	my $self = shift;
 	my $id = shift;
 	
-	my $result = $json->decode($self->_get("/contacts/v1/contact/vid/$id/profile", { propertyMode => 'value_only' }));
+	my $content = $self->_get("/contacts/v1/contact/vid/$id/profile", { propertyMode => 'value_only' });
+	return undef if	$self->rest_client->responseCode =~ /^404$/;
+	my $result = $json->decode($content);
 	return HubSpot::Contact->new({json => $result});
 }
+
+=item contacts()
+
+Retrieve all contact records. Takes one optional parameter, which is the number of contacts you want to retrieve. The returned objects will contain a few of the properties set on that object. See L<HubSpot::Client/properties>.
+
+ my $contact = $client->contacts();
+ my $contact = $client->contacts(200);
+s
+Returns: L<HubSpot::Contact>
+
+=cut
 
 sub contacts
 {
@@ -138,7 +195,7 @@ sub _get
 	$params = {} unless defined $params;								# In case no parameters have been specified
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-	print STDERR $url."\n";
+	#~ print STDERR $url."\n";
 	$self->rest_client->GET($url);										# Get it
 	$self->_checkResponse();											# Check it was successful
 	
@@ -165,7 +222,7 @@ sub _checkResponse
 {
 	my $self = shift;
 	
-	if($self->rest_client->responseCode !~ /^[23]/)
+	if($self->rest_client->responseCode !~ /^[23]|404/)
 	{
 		die ("Request failed.
 	Response Code: ".$self->rest_client->responseCode."
