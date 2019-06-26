@@ -19,4 +19,4 @@ nytprof.out
 *.bs
 /_eumm/
 credentials.sh
-
+*geany
