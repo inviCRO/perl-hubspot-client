@@ -11,6 +11,7 @@ use JSON;
 use HubSpot::Contact;
 use HubSpot::Deal;
 use HubSpot::Owner;
+use HubSpot::Company;
 
 =pod
 
@@ -222,7 +223,7 @@ sub _get {
 	$params = {} unless defined $params;								# In case no parameters have been specified
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-warn $url, "\n";
+    # warn $url, "\n";
 	$self->rest_client->GET($url);										# Get it
 	$self->_checkResponse();											# Check it was successful
 	
@@ -360,7 +361,32 @@ sub owner_by_id {
 	my $id = shift;
 	
 	my $content = $self->_get("/owners/v2/owners/$id");
-	return undef if	$self->rest_client->responseCode =~ /^404$/;
+	return if	$self->rest_client->responseCode =~ /^404$/;
 	my $result = $json->decode($content);
 	return HubSpot::Owner->new({json => $result});
 }
+
+sub company_by_id {
+    my $self = shift;
+    my $id = shift;
+
+	my $content = $self->_get("/companies/v2/companies/$id");
+    # warn "Company $id:", Dumper $content, "\n";
+	return if	$self->rest_client->responseCode =~ /^404$/;
+	my $result = $json->decode($content);
+	return HubSpot::Company->new({json => $result});
+}
+
+sub associations {
+    my $self = shift;
+    my ($type, $id) = @_;
+
+    my $url = "/crm-associations/v1/associations/$id/HUBSPOT_DEFINED/$type";
+    my $res = $self->_get( $url );
+	return if	$self->rest_client->responseCode =~ /^404$/;
+    my $data = $json->decode( $res );
+    my $res = $data->{results};
+    return unless ref $res;
+    return wantarray ? @$res : $res;
+}
+
