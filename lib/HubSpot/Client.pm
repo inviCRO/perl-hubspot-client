@@ -44,6 +44,7 @@ use Class::Tiny qw(rest_client),
 # Global variables
 my $api_url = 'https://api.hubapi.com';
 my $json = JSON->new;
+$json->utf8(1);
 
 sub BUILD
 {
@@ -114,6 +115,17 @@ sub contact_by_id
 	return HubSpot::Contact->new({json => $result});
 }
 
+sub contact_by_email
+{
+	my $self = shift;
+	my $id = shift;
+	
+	my $content = $self->_get("/contacts/v1/contact/email/$id/profile", { propertyMode => 'value_only' });
+	return undef if	$self->rest_client->responseCode =~ /^404$/;
+	my $result = $json->decode($content);
+	return HubSpot::Contact->new({json => $result});
+}
+
 =item contacts()
 
 Retrieve all contact records. Takes one optional parameter, which is the number of contacts you want to retrieve. The returned objects will contain a few of the properties set on that object. See L<HubSpot::Client/properties>.
@@ -128,24 +140,40 @@ Returns: L<HubSpot::Contact>
 sub contacts
 {
 	my $self = shift;
-	my $count = shift;
+    my $type = shift || 'all';
+	my $param = shift;
 
-	$count = 250 unless defined $count;									# Max allowed by the API
+	my $count = 100;									# Max allowed by the API
 	
 	my $contact_objects = [];
 	my $offset;
 	my $results;
 	my $i = 0;
+    my $URL_BASE = '/contacts/v1/lists';
+    my %URLS = ( 
+        all     => "$URL_BASE/all/contacts/all",
+        recent  => "$URL_BASE/recently_updated/contacts/recent",
+        created => "$URL_BASE/all/contacts/recent",
+    );
+    my $url = $URLS{$type} || $URLS{all};
+    my @options;
+    if ($param->{properties} and ref $param->{properties} eq 'ARRAY') {
+        push @options, 'property', $_ for @{ $param->{properties} }; # this means only one is supported XXX, have to rewrite to be array
+    }
+    if ($param->{timeOffset}) {
+        push @options, timeOffset => $param->{timeOffset};
+    }
+
 	while(!defined($results) || $results->{'has-more'} == 1)
 	{
 		$i++;
 		if($offset)
 		{
-			$results = $json->decode($self->_get('/contacts/v1/lists/all/contacts/all', { count => $count, vidOffset => $offset }));
+			$results = $json->decode($self->_get($url, { @options, count => $count, vidOffset => $offset }));
 		}
 		else
 		{
-			$results = $json->decode($self->_get('/contacts/v1/lists/all/contacts/all', { count => $count }));
+			$results = $json->decode($self->_get($url, { @options, count => $count }));
 		}
 		my $contacts = $results->{'contacts'};
 		foreach my $contact (@$contacts)
@@ -154,11 +182,11 @@ sub contacts
 			push(@$contact_objects, $contact_object);
 		}
 		$offset = $results->{'vid-offset'};
-		if(scalar(@$contact_objects) >= $count)
-		{
-			my @slice = @$contact_objects[0..$count-1]; $contact_objects = \@slice;
-			last;
-		}
+        # if(scalar(@$contact_objects) >= $count)
+		# {
+		# 	my @slice = @$contact_objects[0..$count-1]; $contact_objects = \@slice;
+		# 	last;
+		# }
 	}
 	
 	return $contact_objects;
@@ -195,7 +223,7 @@ sub _get
 	$params = {} unless defined $params;								# In case no parameters have been specified
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-	#~ print STDERR $url."\n";
+    # print STDERR $url."\n";
 	$self->rest_client->GET($url);										# Get it
 	$self->_checkResponse();											# Check it was successful
 	
@@ -229,4 +257,23 @@ sub _checkResponse
 	Response Body: ".$self->rest_client->responseContent."
 ");
 	}
+}
+
+sub update {
+    my ($self, $type, $vid, $prop) = @_;
+    return unless ref $prop eq 'HASH';
+    my $stype = $type;
+    $stype =~ s/s$// if $type =~ /^deals|contacts$/;
+    my $url = "/$type/v1/$stype/vid/$vid/profile";
+    my @list;
+    for my $k (keys %$prop) {
+        next unless length $k;
+        push @list, { property => $k, value => $prop->{$k} || '' }
+    }
+    my $data = $json->encode( { properties => \@list } );
+    # print "update: $data\n";
+    my $res = $self->_post( "/contacts/v1/contact/vid/$vid/profile", {}, $data ); 
+    # use Data::Dumper::Concise;
+    # print Dumper $res;
+    return $res;
 }
