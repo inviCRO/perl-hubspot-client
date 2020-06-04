@@ -349,8 +349,18 @@ sub deal_by_id {
 	my $self = shift;
 	my $id = shift;
 	
-	my $content = $self->_get("/deals/v1/deal/$id", { propertyMode => 'value_only' });
+	my $content = $self->_get("/deals/v1/deal/$id");
 	return undef if	$self->rest_client->responseCode =~ /^404$/;
 	my $result = $json->decode($content);
 	return HubSpot::Deal->new({json => $result});
+}
+
+sub owner_by_id {
+	my $self = shift;
+	my $id = shift;
+	
+	my $content = $self->_get("/owners/v2/owners/$id");
+	return undef if	$self->rest_client->responseCode =~ /^404$/;
+	my $result = $json->decode($content);
+	return HubSpot::Owner->new({json => $result});
 }
