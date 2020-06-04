@@ -214,8 +214,7 @@ sub contacts
 	#~ my $date = shift;
 #~ }	
 			
-sub _get
-{
+sub _get {
 	my $self = shift;
 	my $path = shift;
 	my $params = shift;
@@ -223,16 +222,26 @@ sub _get
 	$params = {} unless defined $params;								# In case no parameters have been specified
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-    # print STDERR $url."\n";
+warn $url, "\n";
 	$self->rest_client->GET($url);										# Get it
 	$self->_checkResponse();											# Check it was successful
 	
 	return $self->rest_client->responseContent();						# return the result
 }
 	
-sub _post
-{
+sub _post {
 	my $self = shift;
+    return $self->_request(POST => @_);
+}
+
+sub _put {
+    my $self = shift;
+    return $self->_request(PUT => @_);
+}
+
+sub _request {
+	my $self = shift;
+    my $method = shift;
 	my $path = shift;
 	my $params = shift;
 	my $content = shift;
@@ -240,18 +249,17 @@ sub _post
 	$params = {} unless defined $params;								# In case no parameters have been specified
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-	$self->rest_client->POST($url, $content);							# Get it
+    my $header = { 'Content-Type' => 'application/json' };
+	my $res = $self->rest_client->request( $method, $url, $content, $header);			# GET/POST/PUT itlication/json' };
 	$self->_checkResponse();											# Check it was successful
 	
 	return $self->rest_client->responseContent();
 }
 	
-sub _checkResponse
-{
+sub _checkResponse {
 	my $self = shift;
 	
-	if($self->rest_client->responseCode !~ /^[23]|404/)
-	{
+	if ($self->rest_client->responseCode !~ /^[23]|404/) {
 		die ("Request failed.
 	Response Code: ".$self->rest_client->responseCode."
 	Response Body: ".$self->rest_client->responseContent."
@@ -260,20 +268,89 @@ sub _checkResponse
 }
 
 sub update {
-    my ($self, $type, $vid, $prop) = @_;
+    my ($self, $type, $id, $prop) = @_;
     return unless ref $prop eq 'HASH';
-    my $stype = $type;
-    $stype =~ s/s$// if $type =~ /^deals|contacts$/;
-    my $url = "/$type/v1/$stype/vid/$vid/profile";
+    my %URLMAP = (
+        user => "/contacts/v1/contact/vid/$id/profile",
+        deal => "/deals/v1/deal/$id",
+    );
+    my %METHODMAP = (
+        user => 'POST',
+        deal => 'PUT',
+    );
+    my %NAMEMAP = (
+        user => 'property',
+        deal => 'name',
+    );
+    return unless exists $URLMAP{$type};
+    my $url = $URLMAP{ $type };
+    my $method = $METHODMAP{ $type };
+
     my @list;
     for my $k (keys %$prop) {
         next unless length $k;
-        push @list, { property => $k, value => $prop->{$k} || '' }
+        push @list, { $NAMEMAP{$type} => $k, value => $prop->{$k} || '' }
     }
     my $data = $json->encode( { properties => \@list } );
-    # print "update: $data\n";
-    my $res = $self->_post( "/contacts/v1/contact/vid/$vid/profile", {}, $data ); 
+    my $res = $self->_request( $method => $url, {}, $data ); 
     # use Data::Dumper::Concise;
     # print Dumper $res;
     return $res;
+}
+
+sub deals {
+	my $self = shift;
+    my $type = shift || 'all';
+	my $param = shift;
+
+	my $count = 100;									# Max allowed by the API
+	
+	my $deal_objects = [];
+	my $offset;
+	my $i = 0;
+    my $URL_BASE = '/deals/v1/deal';
+    my %URLS = ( 
+        all     => "$URL_BASE/paged",
+        recent  => "$URL_BASE/recent/modified",
+        created => "$URL_BASE/recent/created",
+    );
+    my $url = $URLS{$type} || $URLS{all};
+    my @options;
+    if ($param->{properties} and ref $param->{properties} eq 'ARRAY') {
+        push @options, 'property', $_ for @{ $param->{properties} };
+    }
+    if ($param->{since}) {
+        push @options, since => $param->{since};
+    }
+
+    my $results;
+	while ( !defined($results) || $results->{'has-more'} == 1 ) {
+		$i++;
+        my $response;
+		if ($offset) {
+			$response = $self->_get($url, { @options, count => $count, offset => $offset });
+		} else {
+			$response = $self->_get($url, { @options, count => $count });
+		}
+        $results = $json->decode( $response );
+
+		my $deals = $results->{'results'};
+		foreach my $deal (@$deals) {
+			my $deal_object = HubSpot::Deal->new({json => $deal});
+			push(@$deal_objects, $deal_object);
+		}
+		$offset = $results->{'offset'};
+	}
+	
+	return $deal_objects;
+}
+
+sub deal_by_id {
+	my $self = shift;
+	my $id = shift;
+	
+	my $content = $self->_get("/deals/v1/deal/$id", { propertyMode => 'value_only' });
+	return undef if	$self->rest_client->responseCode =~ /^404$/;
+	my $result = $json->decode($content);
+	return HubSpot::Deal->new({json => $result});
 }
