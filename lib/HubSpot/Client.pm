@@ -40,6 +40,7 @@ use Class::Tiny qw(rest_client),
 {
 	api_key => 'demo',
 	hub_id => '62515',
+    keymap => undef,
 };
 
 # Global variables
@@ -338,6 +339,7 @@ sub deals {
 		my $deals = $results->{'results'};
 		foreach my $deal (@$deals) {
 			my $deal_object = HubSpot::Deal->new({json => $deal});
+            $self->__apply_keymap_to_deal( $deal_object );
 			push(@$deal_objects, $deal_object);
 		}
 		$offset = $results->{'offset'};
@@ -353,7 +355,23 @@ sub deal_by_id {
 	my $content = $self->_get("/deals/v1/deal/$id");
 	return undef if	$self->rest_client->responseCode =~ /^404$/;
 	my $result = $json->decode($content);
-	return HubSpot::Deal->new({json => $result});
+	my $deal = HubSpot::Deal->new({json => $result});
+    $self->__apply_keymap_to_deal( $deal );
+
+    return $deal;
+}
+
+sub __apply_keymap_to_deal {
+    my ($self, $deal) = @_;
+
+    if (ref $self->keymap and $deal->pipeline) {
+        my $pipeline = $self->keymap->{pipelines}{ $deal->pipeline };
+        if ($pipeline) {
+            print "Found Pipeline $pipeline->{name}\n";
+            $deal->{dealstage} = $pipeline->{ $deal->{dealstage} } || "Unknown($deal->{dealstage})";
+        }
+    }
+    return;
 }
 
 sub owner_by_id {

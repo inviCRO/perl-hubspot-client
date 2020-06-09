@@ -7,31 +7,31 @@ use strict;
 use Data::Dumper;
 
 # Make us a class
-use Class::Tiny qw(json),
-{
-		# Default variables in here
-};
+use Class::Tiny qw(json), qw/
+    id
+    amount
+    amount_in_home_currency
+    contract_type
+    createdate
+    days_to_close
+    dealname
+    dealstage
+    dealtype
+    description
+    expected_duration_months_
+    expected_open_date
+    icro_project_type
+    major_therapeutic_area_mta_
+    pipeline
+    pre_type
+/;
 use parent 'HubSpot::JSONBackedObject';
 
-sub name
-{
-	my $self = shift;
-	
-	return $self->json->{'properties'}->{'dealname'}->{'value'};
+sub BUILD {
+    my $self = shift;
+    warn "BUILD: Deal\n";
+    $self->{id} = $self->json->{dealId};
 }
 
-sub id
-{
-	my $self = shift;
-	
-	return $self->json->{'dealId'};
-}
-
-sub logMeeting()
-{
-	my $self = shift;
-	my $content = shift;
-	my $time = shift;
-}
 	
 1;
