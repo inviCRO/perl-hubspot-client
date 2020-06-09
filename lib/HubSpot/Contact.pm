@@ -29,40 +29,33 @@ This is the class returned by HubSpot::Client when it you execute methods that r
 
 # Make us a class
 use subs qw();
-use Class::Tiny qw(id primaryEmail firstName lastName company lastModifiedDateTime),
+use Class::Tiny qw(id primaryEmail firstName lastName company lastModifiedDateTime email),
 {
 		# Default variables in here
 };
 use parent 'HubSpot::JSONBackedObject';
 
-sub BUILD
-{
+sub BUILD {
 	my $self = shift;
+    $self->{'id'} = $self->json->{'vid'};
 	
-	if($self->json)
-	{
-		$self->{'id'} = $self->json->{'vid'};
-		$self->{'firstName'} = $self->json->{'properties'}->{'firstname'}->{'value'};
-		$self->{'lastName'} = $self->json->{'properties'}->{'lastname'}->{'value'};
-		$self->{'company'} = $self->json->{'properties'}->{'company'}->{'value'};
-		$self->{'lastModifiedDateTime'} = DateTime->from_epoch(epoch => $self->json->{'properties'}->{'lastmodifieddate'}->{'value'}/1000, time_zone => 'UTC');
-		my $profiles = $self->json->{'identity-profiles'};
-		my $first_profile = $$profiles[0];						# other profiles may exist if it is a merged contact
-		my $identities = $first_profile->{'identities'};
-		my $found_email;
-		foreach my $identity (@$identities)
-		{
-			if($identity->{'is-primary'} && $identity->{'type'} eq "EMAIL")
-			{
-				$found_email = $identity->{'value'};
-			}
-		}
-		if($found_email)
-		{
-			$self->{'primaryEmail'} = $found_email;
-		}
-		# email isn't a compulsory field - might not be there
-	}
+    if ($self->json) {
+        my $profiles = $self->json->{'identity-profiles'};
+        my $first_profile = $$profiles[0];						# other profiles may exist if it is a merged contact
+        my $identities = $first_profile->{'identities'};
+        my $found_email;
+        foreach my $identity (@$identities) {
+            if ($identity->{'is-primary'} && $identity->{'type'} eq "EMAIL") {
+                $found_email = $identity->{'value'};
+            }
+        }
+        if ($found_email) {
+            $self->{primaryEmail} = $found_email;
+        }
+        # email isn't a compulsory field - might not be there
+    }
+
+    $self->{email} = $self->{primaryEmail};
 }
 
 =pod

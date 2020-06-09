@@ -24,6 +24,8 @@ use Class::Tiny qw(json), qw/
     major_therapeutic_area_mta_
     pipeline
     pre_type
+    icro_project_id
+    icro_project_url
 /;
 use parent 'HubSpot::JSONBackedObject';
 
