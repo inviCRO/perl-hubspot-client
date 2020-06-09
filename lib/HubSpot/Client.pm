@@ -367,7 +367,7 @@ sub __apply_keymap_to_deal {
     if (ref $self->keymap and $deal->pipeline) {
         my $pipeline = $self->keymap->{pipelines}{ $deal->pipeline };
         if ($pipeline) {
-            print "Found Pipeline $pipeline->{name}\n";
+            # print "Found Pipeline $pipeline->{name}\n";
             $deal->{dealstage} = $pipeline->{ $deal->{dealstage} } || "Unknown($deal->{dealstage})";
         }
     }
