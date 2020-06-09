@@ -29,7 +29,6 @@ use parent 'HubSpot::JSONBackedObject';
 
 sub BUILD {
     my $self = shift;
-    warn "BUILD: Deal\n";
     $self->{id} = $self->json->{dealId};
 }
 

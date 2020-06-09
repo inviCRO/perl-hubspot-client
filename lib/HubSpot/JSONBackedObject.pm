@@ -16,7 +16,6 @@ use Class::Tiny qw(properties),
 sub BUILD
 {
 	my ($self, $args) = @_;
-    warn "BUILD: JSONBackedObject ($self)\n";
 	
 	if(defined($args->{'json'}))
 	{
