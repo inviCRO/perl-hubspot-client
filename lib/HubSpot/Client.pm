@@ -171,7 +171,7 @@ sub contacts
 		$i++;
 		if($offset)
 		{
-			$results = $json->decode($self->_get($url, { @options, count => $count, vidOffset => $offset }));
+			$results = $json->decode($self->_get($url, { @options, count => $count, vidOffset => $offset })); # AAA
 		}
 		else
 		{
@@ -222,9 +222,13 @@ sub _get {
 	my $params = shift;
 	
 	$params = {} unless defined $params;								# In case no parameters have been specified
-	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
+    if (ref $params eq 'ARRAY') {
+        push @$params, hapikey => $self->api_key;								# Include the API key in the parameters
+    } else {
+        $params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
+    }
+
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-    # warn $url, "\n";
 	$self->rest_client->GET($url);										# Get it
 	$self->_checkResponse();											# Check it was successful
 	
@@ -275,16 +279,19 @@ sub update {
     my %URLMAP = (
         user => "/contacts/v1/contact/vid/$id/profile",
         deal => "/deals/v1/deal/$id",
+        company => "/companies/v2/companies/$id",
     );
     my %METHODMAP = (
         user => 'POST',
         deal => 'PUT',
+        company => 'PUT',
     );
     my %NAMEMAP = (
         user => 'property',
         deal => 'name',
+        company => 'name',
     );
-    return unless exists $URLMAP{$type};
+    die "ERROR: update: unsupported type '$type'\n" unless exists $URLMAP{$type};
     my $url = $URLMAP{ $type };
     my $method = $METHODMAP{ $type };
 
@@ -406,5 +413,53 @@ sub associations {
     my $res = $data->{results};
     return unless ref $res;
     return wantarray ? @$res : $res;
+}
+
+sub companies {
+	my $self = shift;
+    my $type = shift || 'all';
+	my $param = shift;
+
+	my $count = 100;									# Max allowed by the API
+	
+	my $companies = [];
+	my $offset;
+	my $i = 0;
+    my $URL_BASE = '/companies/v2/companies';
+    my %URLS = ( 
+        all     => "$URL_BASE/paged",
+        recent  => "$URL_BASE/recent/modified",
+        created => "$URL_BASE/recent/created",
+    );
+    my $url = $URLS{$type} || $URLS{all};
+    my @options;
+    if ($param->{properties} and ref $param->{properties} eq 'ARRAY') {
+        push @options, 'properties', $_ for @{ $param->{properties} };
+    }
+    if ($param->{since}) {
+        push @options, since => $param->{since};
+    }
+
+    my $results;
+	while ( !defined($results) || $results->{'has-more'} == 1 ) {
+		$i++;
+        my $response;
+		if ($offset) {
+			$response = $self->_get($url, [ @options, count => $count, offset => $offset ]); # AAA
+		} else {
+			$response = $self->_get($url, [ @options, count => $count ]);
+		}
+        $results = $json->decode( $response );
+# die Dumper $response;
+
+		my $comp = $results->{results} || $results->{companies};
+		foreach my $c (@$comp) {
+			my $company = HubSpot::Company->new({json => $c});
+			push(@$companies, $company);
+		}
+		$offset = $results->{'offset'};
+	}
+	
+	return $companies;
 }
 
