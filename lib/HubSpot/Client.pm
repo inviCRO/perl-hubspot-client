@@ -6,12 +6,13 @@ use strict;
 # Modules
 #use Log::Log4perl;
 use REST::Client;
-use Data::Dumper;
+use Data::Dumper::Concise;
 use JSON;
 use HubSpot::Contact;
 use HubSpot::Deal;
 use HubSpot::Owner;
 use HubSpot::Company;
+use HubSpot::Property;
 
 =pod
 
@@ -194,20 +195,18 @@ sub contacts
 	return $contact_objects;
 }
 
-#~ sub owners
-#~ {
-	#~ my $self = shift;
+sub owners {
+    my $self = shift;
 
-	#~ my $owners = $json->decode($self->_get('/owners/v2/owners'));
-	#~ my $owner_objects = [];
-	#~ foreach my $owner (@$owners)
-	#~ {
-		#~ my $owner_object = HubSpot::Owner->new({json => $owner});
-		#~ push(@$owner_objects, $owner_object);
-	#~ }
-	
-	#~ return $owner_objects;
-#~ }
+    my $owners = $json->decode($self->_get('/owners/v2/owners'));
+    my $owner_objects = [];
+    foreach my $owner (@$owners) {
+        my $owner_object = HubSpot::Owner->new({json => $owner});
+        push(@$owner_objects, $owner_object);
+    }
+
+    return $owner_objects;
+}
 
 #~ sub logMeeting
 #~ {
@@ -273,6 +272,26 @@ sub _checkResponse {
 	}
 }
 
+sub create {
+    my ($self, $type, $prop, $assoc) = @_;
+    my %URLMAP = (
+        deal => '/deals/v1/deal/',
+    );
+    my $url = $URLMAP{$type} or die "Unknown type $type\n";
+
+    my @list;
+    for my $k (keys %$prop) {
+        next unless length $k;
+        push @list, { properties => $k, value => $prop->{$k} || '' }
+    }
+    my %param = ( properties => \@list );
+    $param{associations} = $assoc if ref $assoc;
+    my $data = $json->encode( \%param );
+    my $res = $self->_request( POST => $url, {}, $data ); 
+    return $res;
+}
+
+
 sub update {
     my ($self, $type, $id, $prop) = @_;
     return unless ref $prop eq 'HASH';
@@ -302,8 +321,6 @@ sub update {
     }
     my $data = $json->encode( { properties => \@list } );
     my $res = $self->_request( $method => $url, {}, $data ); 
-    # use Data::Dumper::Concise;
-    # print Dumper $res;
     return $res;
 }
 
@@ -326,7 +343,7 @@ sub deals {
     my $url = $URLS{$type} || $URLS{all};
     my @options;
     if ($param->{properties} and ref $param->{properties} eq 'ARRAY') {
-        push @options, 'property', $_ for @{ $param->{properties} };
+        push @options, 'properties', $_ for @{ $param->{properties} };
     }
     if ($param->{since}) {
         push @options, since => $param->{since};
@@ -337,13 +354,12 @@ sub deals {
 		$i++;
         my $response;
 		if ($offset) {
-			$response = $self->_get($url, { @options, count => $count, offset => $offset });
+			$response = $self->_get($url, [ @options, count => $count, offset => $offset ]);
 		} else {
-			$response = $self->_get($url, { @options, count => $count });
+			$response = $self->_get($url, [ @options, count => $count ]);
 		}
         $results = $json->decode( $response );
-
-		my $deals = $results->{'results'};
+		my $deals = $results->{results} || $results->{deals};
 		foreach my $deal (@$deals) {
 			my $deal_object = HubSpot::Deal->new({json => $deal});
             $self->__apply_keymap_to_deal( $deal_object );
@@ -463,3 +479,29 @@ sub companies {
 	return $companies;
 }
 
+sub properties {
+    my ($self, $type) = @_;
+    my %URLMAP = (
+        deals => '/properties/v1/deals/properties',
+    );
+    my $url = $URLMAP{$type};
+    die "Unknown type '$type'" unless defined $url;
+
+    my $res = $self->_get( $url );
+    my $data = $json->decode( $res );
+    return $data;
+}
+
+sub property {
+    my ($self, $type, $name) = @_;
+    my %URLMAP = (
+        deal => '/properties/v1/deals/properties/named/',
+    );
+    my $url = $URLMAP{$type} . $name;
+    die "Unknown type '$type'" unless exists $URLMAP{$type};
+
+    my $res = $self->_get( $url );
+    my $data = $json->decode( $res );
+    my $obj = HubSpot::Property->new({json => $data});
+    return $obj;
+}

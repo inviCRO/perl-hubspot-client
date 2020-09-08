@@ -21,7 +21,6 @@ sub BUILD
 		# Not actually JSON but a perl object derived from the JSON response
 		$self->json($args->{'json'});
 	}
-die Dumper $args if ref $self =~ /Owner/;
 	
 	if (defined($self->json->{'properties'})) {	# If this object has a properties key (which probably most of them will)
 		# pull it out as a hash that is a little easier to access
@@ -35,6 +34,11 @@ die Dumper $args if ref $self =~ /Owner/;
         for my $p (qw/email firstName lastName isActive type updatedAt createdAt/) {
             $self->properties->{$p} = $self->json->{$p};
         }
+    } elsif (ref $self eq 'HubSpot::Property') {
+        for my $attr (Class::Tiny->get_all_attributes_for("HubSpot::Property")) {
+            next if exists $self->{$attr};
+            $self->{$attr} = $self->json->{$attr};
+        }
     }
 
 # warn "REF: ", ref $self, "\n";
@@ -42,7 +46,7 @@ die Dumper $args if ref $self =~ /Owner/;
 # warn "attr($attr)=", $self->{properties}{ $attr }, "\n";
         next if defined $self->{ $attr };
         $self->{ $attr } = $self->{properties}{ $attr };
-        if ($attr =~ /(?:date|At)$/) {
+        if ($attr =~ /(?:date|At)$|^date/ and $self->{$attr} > 0) {
             $self->{ $attr } = Time::Piece->new( $self->{ $attr } / 1000 );
         }
     }

@@ -11,21 +11,31 @@ use Class::Tiny qw(json), qw/
     id
     amount
     amount_in_home_currency
+    completion_date
+    contract_lead
     contract_type
     createdate
+    date_received
     days_to_close
     dealname
     dealstage
     dealtype
+    delivery_date
     description
+    due_date
     expected_duration_months_
     expected_open_date
-    icro_project_type
-    major_therapeutic_area_mta_
-    pipeline
-    pre_type
     icro_project_id
+    icro_project_type
     icro_project_url
+    internal_team_meeting_date
+    major_therapeutic_area_mta_
+    open_date
+    pipeline
+    precontract_id
+    precontract_url
+    pre_type
+    vip
 /;
 use parent 'HubSpot::JSONBackedObject';
 
