@@ -161,7 +161,7 @@ sub contacts
     my $url = $URLS{$type} || $URLS{all};
     my @options;
     if ($param->{properties} and ref $param->{properties} eq 'ARRAY') {
-        push @options, 'property', $_ for @{ $param->{properties} }; # this means only one is supported XXX, have to rewrite to be array
+        push @options, 'property', $_ for @{ $param->{properties} };
     }
     if ($param->{timeOffset}) {
         push @options, timeOffset => $param->{timeOffset};
@@ -172,11 +172,11 @@ sub contacts
 		$i++;
 		if($offset)
 		{
-			$results = $json->decode($self->_get($url, { @options, count => $count, vidOffset => $offset })); # AAA
+			$results = $json->decode($self->_get($url, [ @options, count => $count, vidOffset => $offset ])); # AAA
 		}
 		else
 		{
-			$results = $json->decode($self->_get($url, { @options, count => $count }));
+			$results = $json->decode($self->_get($url, [ @options, count => $count ]));
 		}
 		my $contacts = $results->{'contacts'};
 		foreach my $contact (@$contacts)
@@ -282,7 +282,7 @@ sub create {
     my @list;
     for my $k (keys %$prop) {
         next unless length $k;
-        push @list, { properties => $k, value => $prop->{$k} || '' }
+        push @list, { name => $k, value => $prop->{$k} || '' }
     }
     my %param = ( properties => \@list );
     $param{associations} = $assoc if ref $assoc;
@@ -299,16 +299,20 @@ sub update {
         user => "/contacts/v1/contact/vid/$id/profile",
         deal => "/deals/v1/deal/$id",
         company => "/companies/v2/companies/$id",
+        # contact => "/crm/v3/objects/contacts/$id",
+        contact => "/contacts/v1/contact/vid/:vid/profile",
     );
     my %METHODMAP = (
         user => 'POST',
         deal => 'PUT',
         company => 'PUT',
+        contact => 'POST', # PATCH in v3
     );
     my %NAMEMAP = (
         user => 'property',
         deal => 'name',
         company => 'name',
+        contact => 'property',
     );
     die "ERROR: update: unsupported type '$type'\n" unless exists $URLMAP{$type};
     my $url = $URLMAP{ $type };

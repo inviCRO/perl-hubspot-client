@@ -29,7 +29,7 @@ This is the class returned by HubSpot::Client when it you execute methods that r
 
 # Make us a class
 use subs qw();
-use Class::Tiny qw(id primaryEmail firstName lastName company lastModifiedDateTime email),
+use Class::Tiny qw(id primaryEmail firstname lastname company lastModifiedDateTime email),
 {
 		# Default variables in here
 };
@@ -68,7 +68,7 @@ Instances of this object are usually created bu HubSpot::Client, which instnatia
 
 Returns: new instance of this class.
 
-=item new({primaryEmail => 'foo@bar.com', firstName => 'John', lastName => 'Smith'}) (constructor)
+=item new({primaryEmail => 'foo@bar.com', firstname => 'John', lastname => 'Smith'}) (constructor)
 
 You can create instances of contacts and populate properties like this, but it will not cause the contact to be created in HubSpot. That will likely be implemented in future. Patches welcome.
 
@@ -95,11 +95,11 @@ for example. Both do the same thing.
 
 The ID of the contact as it is known in HubSpot. You can use this to retrieve a specific contact only, rather than multiple contacts. See L<contact|HubSpot::Client/contact>
 
-=item firstName
+=item firstname
 
 Returns the contact's first name, which is a mandatory field in HubSpot so this will always return something.
 
-=item lastName
+=item lastname
 
 Returns the contact's first name, which is a mandatory field in HubSpot so this will always return something.
 
