@@ -257,7 +257,7 @@ sub _request {
     my $header = { 'Content-Type' => 'application/json' };
 	my $res = $self->rest_client->request( $method, $url, $content, $header);			# GET/POST/PUT itlication/json' };
 	$self->_checkResponse();											# Check it was successful
-	
+
 	return $self->rest_client->responseContent();
 }
 	
@@ -300,7 +300,7 @@ sub update {
         deal => "/deals/v1/deal/$id",
         company => "/companies/v2/companies/$id",
         # contact => "/crm/v3/objects/contacts/$id",
-        contact => "/contacts/v1/contact/vid/:vid/profile",
+        contact => "/contacts/v1/contact/vid/$id/profile",
     );
     my %METHODMAP = (
         user => 'POST',
@@ -433,6 +433,23 @@ sub associations {
     my $res = $data->{results};
     return unless ref $res;
     return wantarray ? @$res : $res;
+}
+
+sub add_assoc {
+    my $self = shift;
+    my ($type, $from, $to) = @_;
+
+    my $url = "/crm-associations/v1/associations";
+    my %param = (
+        category => "HUBSPOT_DEFINED",
+        definitionId => $type,
+        fromObjectId => $from,
+        toObjectId => $to,
+    );
+    my $data = $json->encode( \%param );
+    my $res = $self->_request( PUT => $url, {}, $data ); 
+    print "res = $res\n";
+    return $res;
 }
 
 sub companies {
