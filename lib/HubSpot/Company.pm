@@ -7,17 +7,17 @@ use strict;
 use Data::Dumper;
 
 # Make us a class
-use Class::Tiny qw(json id 
+use Class::Tiny qw(
     domain description address address2 annualrevenue city country createdate facebook_company_page
     first_deal_created_date founded_year industry is_public lifecyclestage linkedin_company_page linkedinbio
     name num_associated_deals numberofemployees phone state timezone twitterhandle
-    web_technologies website zip icro_id relationship
+    web_technologies website zip icro_id icro_abbr icro_url relationship
 );
 use parent 'HubSpot::JSONBackedObject';
 
-sub BUILD {
-    my $self = shift;
-    $self->{id} = $self->{json}{companyId};
-}
+# sub BUILD {
+#     my $self = shift;
+#     $self->{id} = $self->{json}{companyId};
+# }
 
 1;

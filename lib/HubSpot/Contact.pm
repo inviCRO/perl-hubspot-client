@@ -29,34 +29,32 @@ This is the class returned by HubSpot::Client when it you execute methods that r
 
 # Make us a class
 use subs qw();
-use Class::Tiny qw(id primaryEmail firstname lastname company lastModifiedDateTime email),
+use Class::Tiny qw(email firstname lastname lastmodifieddate createdate company phone website),
 {
 		# Default variables in here
 };
 use parent 'HubSpot::JSONBackedObject';
 
-sub BUILD {
-	my $self = shift;
-    $self->{'id'} = $self->json->{'vid'};
-	
-    if ($self->json) {
-        my $profiles = $self->json->{'identity-profiles'};
-        my $first_profile = $$profiles[0];						# other profiles may exist if it is a merged contact
-        my $identities = $first_profile->{'identities'};
-        my $found_email;
-        foreach my $identity (@$identities) {
-            if ($identity->{'is-primary'} && $identity->{'type'} eq "EMAIL") {
-                $found_email = $identity->{'value'};
-            }
-        }
-        if ($found_email) {
-            $self->{primaryEmail} = $found_email;
-        }
-        # email isn't a compulsory field - might not be there
-    }
-
-    $self->{email} = $self->{primaryEmail};
-}
+# sub BUILD {
+# 	my $self = shift;
+#     if ($self->json) {
+#         my $profiles = $self->json->{'identity-profiles'};
+#         my $first_profile = $$profiles[0];						# other profiles may exist if it is a merged contact
+#         my $identities = $first_profile->{'identities'};
+#         my $found_email;
+#         foreach my $identity (@$identities) {
+#             if ($identity->{'is-primary'} && $identity->{'type'} eq "EMAIL") {
+#                 $found_email = $identity->{'value'};
+#             }
+#         }
+#         if ($found_email) {
+#             $self->{primaryEmail} = $found_email;
+#         }
+#         # email isn't a compulsory field - might not be there
+#     }
+# 
+#     $self->{email} = $self->{primaryEmail};
+# }
 
 =pod
 

@@ -8,7 +8,7 @@ use Time::Piece;
 use Data::Dumper;
 
 # Make us a class
-use Class::Tiny qw(properties),
+use Class::Tiny qw(properties id),
 {
 	json => undef,
 };
@@ -16,26 +16,21 @@ use Class::Tiny qw(properties),
 sub BUILD
 {
 	my ($self, $args) = @_;
+
+    # warn "===================\n";
+    # warn Dumper $args;
+    # warn "===================\n";
 	
 	if(defined($args->{'json'})) {
 		# Not actually JSON but a perl object derived from the JSON response
 		$self->json($args->{'json'});
+        if (defined $self->json->{id}) {
+            $self->id( $self->json->{id} );
+        }
 	}
 	
-	if (defined($self->json->{'properties'})) {	# If this object has a properties key (which probably most of them will)
-		# pull it out as a hash that is a little easier to access
-		$self->properties({});
-        my $new_style = 0;
-		foreach my $property (keys %{$self->json->{'properties'}}) {
-            unless (ref $self->json->{'properties'}->{$property}) {
-                $new_style = 1;
-                warn "===== NEW STYLE\n";
-                last;
-            }
-			$self->properties->{$property} = $self->json->{'properties'}->{$property}->{'value'} if length($self->json->{'properties'}->{$property}->{'value'}) > 0;
-# warn "prop($property)=", $self->properties->{$property};
-		}
-        $self->properties( $self->json->{properties} ) if $new_style;
+	if (defined($self->json->{'properties'})) {
+        $self->properties( $self->json->{properties} );
 	} elsif (ref $self eq 'HubSpot::Owner') {
         $self->properties({});
         for my $p (qw/email firstName lastName isActive type updatedAt createdAt/) {
@@ -50,20 +45,19 @@ sub BUILD
 
 # warn "REF: ", ref $self, "\n";
     for my $attr ( Class::Tiny->get_all_attributes_for(ref $self) ) {
-# warn "attr($attr)=", $self->{properties}{ $attr }, "\n";
         next if defined $self->{ $attr };
+# warn "attr($attr)=", $self->{properties}{ $attr }, "\n";
         $self->{ $attr } = $self->{properties}{ $attr };
         if ($attr =~ /(?:date|At)$|^date/ and $self->{$attr} > 0) {
-            $self->{ $attr } = Time::Piece->new( $self->{ $attr } / 1000 );
+            ( my $date = $self->{ $attr } ) =~ s/(?:\.\d{3})?Z$//; # remove ms and timezone Z (.000Z)
+            $self->{ $attr } = eval{ Time::Piece->strptime( $date, "%Y-%m-%dT%H:%M:%S" ) };
+            warn "WARN: Could not parse date $attr=$date: $@\n" if $@;
         }
     }
 }
 
-sub getProperty
-{
-	my $self = shift;
-	my $key = shift;
-
+sub getProperty {
+	my ( $self, $key ) = @_;
 	return $self->properties->{$key};
 }
 	
