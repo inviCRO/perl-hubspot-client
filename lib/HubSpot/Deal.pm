@@ -28,6 +28,7 @@ use Class::Tiny qw(json), qw/
     icro_project_id
     icro_project_type
     icro_project_url
+    precontractid
     internal_team_meeting_date
     major_therapeutic_area_mta_
     open_date
