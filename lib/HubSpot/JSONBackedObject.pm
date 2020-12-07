@@ -25,10 +25,17 @@ sub BUILD
 	if (defined($self->json->{'properties'})) {	# If this object has a properties key (which probably most of them will)
 		# pull it out as a hash that is a little easier to access
 		$self->properties({});
+        my $new_style = 0;
 		foreach my $property (keys %{$self->json->{'properties'}}) {
+            unless (ref $self->json->{'properties'}->{$property}) {
+                $new_style = 1;
+                warn "===== NEW STYLE\n";
+                last;
+            }
 			$self->properties->{$property} = $self->json->{'properties'}->{$property}->{'value'} if length($self->json->{'properties'}->{$property}->{'value'}) > 0;
 # warn "prop($property)=", $self->properties->{$property};
 		}
+        $self->properties( $self->json->{properties} ) if $new_style;
 	} elsif (ref $self eq 'HubSpot::Owner') {
         $self->properties({});
         for my $p (qw/email firstName lastName isActive type updatedAt createdAt/) {
