@@ -6,12 +6,20 @@ use strict;
 # Classes we need
 use Data::Dumper;
 
-use Class::Tiny qw(id email firstName lastName isActive type updatedAt createdAt name);
+use Class::Tiny qw(
+    archived 
+    createdAt 
+    email 
+    firstName 
+    lastName 
+    updatedAt 
+    userId
+    name
+);
 use parent 'HubSpot::JSONBackedObject';
 
 sub BUILD {
     my $self = shift;
-    $self->{id} = $self->{json}{ownerId};
     $self->{name} = join(' ', $self->firstName, $self->lastName);
 }
 

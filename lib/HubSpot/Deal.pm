@@ -37,6 +37,15 @@ use Class::Tiny qw/
     precontract_url
     pre_type
     vip
+    hubspot_owner_id
+
+    anatomy
+    deal_currency_code
+    modalities
+    phase
+    population_age
+    revenue_to_date
+    service_areas
 /;
 
 	

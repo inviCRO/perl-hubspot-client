@@ -260,13 +260,13 @@ sub owners {
 
     my $res = $self->_get('/crm/v3/owners');
     my $results = $json->decode($res);
-    my $owner_objects = [];
+    my $objects = [];
     foreach my $owner (@{ $results->{results} }) {
-        my $owner_object = HubSpot::Owner->new({json => $owner});
-        push(@$owner_objects, $owner_object);
+        my $obj = HubSpot::Owner->new({json => $owner});
+        push(@$objects, $obj);
     }
 
-    return $owner_objects;
+    return $objects;
 }
 
 #~ sub logMeeting
@@ -345,9 +345,9 @@ sub create {
     my %param = ( properties => $prop );
     $param{associations} = $assoc if ref $assoc;
     my $data = $json->encode( \%param );
-    warn "CREATE url: $url\n";
-    warn "CREATE data: ======\n", Dumper $data, "\n===========\n";
-    warn Dumper \%param, "========\n";
+    # warn "CREATE url: $url\n";
+    # warn "CREATE data: ======\n", Dumper $data, "\n===========\n";
+    # warn Dumper \%param, "========\n";
     my $res = $self->_request( POST => $url, {}, $data ); 
     my $result = $json->decode( $res );
     my $module = "HubSpot::".ucfirst($type);
