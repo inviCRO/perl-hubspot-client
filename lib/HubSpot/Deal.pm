@@ -7,8 +7,8 @@ use strict;
 use Data::Dumper;
 
 # Make us a class
-use Class::Tiny qw(json), qw/
-    id
+use parent 'HubSpot::JSONBackedObject';
+use Class::Tiny qw/
     amount
     amount_in_home_currency
     completion_date
@@ -38,12 +38,6 @@ use Class::Tiny qw(json), qw/
     pre_type
     vip
 /;
-use parent 'HubSpot::JSONBackedObject';
-
-sub BUILD {
-    my $self = shift;
-    $self->{id} = $self->json->{dealId};
-}
 
 	
 1;

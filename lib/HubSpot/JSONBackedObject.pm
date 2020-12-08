@@ -13,15 +13,14 @@ use Class::Tiny qw(properties id),
 	json => undef,
 };
 
-sub BUILD
-{
+sub BUILD {
 	my ($self, $args) = @_;
 
     # warn "===================\n";
     # warn Dumper $args;
     # warn "===================\n";
 	
-	if(defined($args->{'json'})) {
+	if (defined($args->{'json'})) {
 		# Not actually JSON but a perl object derived from the JSON response
 		$self->json($args->{'json'});
         if (defined $self->json->{id}) {
