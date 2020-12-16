@@ -29,7 +29,7 @@ This is the class returned by HubSpot::Client when it you execute methods that r
 
 # Make us a class
 use subs qw();
-use Class::Tiny qw(email firstname lastname lastmodifieddate createdate company phone website),
+use Class::Tiny qw(email firstname lastname lastmodifieddate createdate company phone website icro_contact_id),
 {
 		# Default variables in here
 };

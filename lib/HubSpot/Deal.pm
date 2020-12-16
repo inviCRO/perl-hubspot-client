@@ -14,7 +14,14 @@ use Class::Tiny qw/
     completion_date
     contract_lead
     contract_type
+    contract_site
+    contract_value
+    expected_main_lab_resource_dps_
+    expected_subcontractor_fees
+    emerging_business
+    sponsor_site
     createdate
+    closedate
     date_received
     days_to_close
     dealname
@@ -31,6 +38,7 @@ use Class::Tiny qw/
     precontractid
     internal_team_meeting_date
     major_therapeutic_area_mta_
+    secondary_therapeutic_areas_sta_
     open_date
     pipeline
     precontract_id
@@ -38,11 +46,14 @@ use Class::Tiny qw/
     pre_type
     vip
     hubspot_owner_id
+    jobtitle
+    department
 
     anatomy
     deal_currency_code
     modalities
     phase
+    species
     population_age
     revenue_to_date
     service_areas

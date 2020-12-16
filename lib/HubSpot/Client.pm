@@ -398,6 +398,7 @@ sub deals {
         $results = $json->decode( $res );
 		foreach my $data (@{ $results->{results} }) {
 			my $obj = HubSpot::Deal->new({json => $data});
+            $self->__apply_keymap_to_deal( $obj );
 			push(@$objects, $obj);
 		}
         if ($results->{paging}) {
@@ -461,6 +462,7 @@ sub deals_search {
         $results = $json->decode( $res );
 		foreach my $data (@{ $results->{results} }) {
 			my $obj = HubSpot::Deal->new({json => $data});
+            $self->__apply_keymap_to_deal( $obj );
 			push(@$objects, $obj);
 		}
         if ($results->{paging}) {
@@ -479,10 +481,10 @@ sub __apply_keymap_to_deal {
         my $pipeline = $self->keymap->{pipelines}{ $deal->pipeline };
         if ($pipeline) {
             # print "Found Pipeline $pipeline->{name}\n";
+            $deal->{dealstage_id} = $deal->{dealstage};
             $deal->{dealstage} = $pipeline->{ $deal->{dealstage} } || "Unknown($deal->{dealstage})";
         }
     }
-    return;
 }
 
 sub owner_by_id {
@@ -549,7 +551,7 @@ sub companies_search {
         $results = $json->decode( $res );
 		my $companies = $results->{'results'};
 		foreach my $data (@$companies) {
-			my $obj = HubSpot::Contact->new({json => $data});
+			my $obj = HubSpot::Company->new({json => $data});
 			push(@$company_objects, $obj);
 		}
         if ($results->{paging}) {
@@ -562,19 +564,33 @@ sub companies_search {
 }
 
 sub associations {
-    my $self = shift;
-    my ($type, $id) = @_;
-
-    my $url = "/crm-associations/v1/associations/$id/HUBSPOT_DEFINED/$type";
-    my $res = $self->_get( $url );
-	return if	$self->rest_client->responseCode =~ /^404$/;
+    my ($self, $from, $id, $to) = @_;
+    my $url = "/crm/v3/associations/$from/$to/batch/read";
+    my $res = $self->_post( $url, {}, { inputs => [{ id => $id }] } );
+	return if $self->rest_client->responseCode =~ /^404$/;
     my $data = $json->decode( $res );
     my $res = $data->{results};
     return unless ref $res;
-    return wantarray ? @$res : $res;
+
+    # local $Data::Dumper::Maxdepth = 5;
+    my $method = "${to}_by_id";
+    my @res;
+    for my $r (@$res) {
+        # print Dumper $r, $method;
+        for my $i ( @{ $r->{to} } ) {
+            my $id = $i->{id};
+            if ($self->can($method)) {
+                my $obj = $self->$method( $id );
+                push @res, $obj;
+            } else {
+                push @res, $r;
+            }
+        }
+    }
+    return wantarray ? @res : shift @res;
 }
 
-sub add_assoc {
+sub add_assoc_v1 {
     my $self = shift;
     my ($type, $from, $to) = @_;
 
@@ -588,6 +604,77 @@ sub add_assoc {
     my $data = $json->encode( \%param );
     my $res = $self->_request( PUT => $url, {}, $data ); 
     return $res;
+}
+
+sub del_assoc_v1 {
+    my $self = shift;
+    my ($type, $from, $to) = @_;
+    my $url = '/crm-associations/v1/associations/delete';
+    my %param = (
+        category => 'HUBSPOT_DEFINED',
+        definitionId => $type,
+        fromObjectId => $from,
+        toObjectId => $to,
+    );
+    my $data = $json->encode( \%param );
+    my $res = $self->_request( PUT => $url, {}, $data );
+    return $res;
+}
+
+sub del_assoc {
+    my ($self, $from, $fid, $to, $tid, $atype) = @_;
+    my $atype = "${from}_to_${to}";
+    my $url = "/crm/v3/associations/$from/$to/batch/archive";
+    my %param = (
+        inputs => [
+            {
+                from => { id => $fid },
+                to => { id => $tid },
+                type => $atype,
+            }
+        ]);
+    my $data = $json->encode( \%param );
+    my $res = $self->_request( POST => $url, {}, $data );
+    return $res;
+}
+
+sub list_assoc {
+    my ($self, $from, $to) = @_;
+    my $url = "/crm/v3/associations/$from/$to/types";
+    my $res = $self->_request( GET => $url );
+    return $res;
+}
+
+sub add_assoc {
+    my ($self, $from, $fid, $to, $tid, $atype, $replace) = @_;
+
+    $atype //= "${from}_to_${to}";
+
+    if (defined $replace and $replace) {
+        while (1) {
+            my $res = $self->associations($from, $fid, $to);
+            if (defined $res and $res->{id} and $res->{id} != $tid) {
+                print "  UPDATE: Replacing $atype association between $fid:$res->{id}\n";
+                my $res = $self->del_assoc($from, $fid, $to, $res->{id});
+            } else {
+                last;
+            }
+        }
+    }
+
+    my $url = "/crm/v3/associations/$from/$to/batch/create";
+    my %param = (
+        inputs => [
+            {
+                from => { id => $fid },
+                to => { id => $tid },
+                type => $atype,
+            }
+        ]);
+    my $data = $json->encode( \%param );
+    my $res = $self->_request( POST => $url, {}, $data );
+    my $results = $json->decode( $res );
+    return $results;
 }
 
 sub companies {
