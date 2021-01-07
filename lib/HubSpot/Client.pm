@@ -42,6 +42,7 @@ use Class::Tiny qw(rest_client),
 	api_key => 'demo',
 	hub_id => '62515',
     keymap => undef,
+    register_issue => undef,
 };
 
 # Global variables
@@ -244,6 +245,11 @@ sub deals_recently_changed {
     return $self->deals_search( ["hs_lastmodifieddate#$recent#GT"] );
 }
 
+sub deal_by_name {
+    my ($self, $name) = @_;
+    return $self->deals_search( ["dealname#$name#EQ"] );
+}
+
 sub contacts_recently_changed {
     my ($self, $since) = @_;
     my $dt = DateTime->now->add( seconds => -$since );
@@ -281,17 +287,29 @@ sub _get {
 	my $path = shift;
 	my $params = shift;
 	
-	$params = {} unless defined $params;								# In case no parameters have been specified
+	$params = {} unless defined $params;
     if (ref $params eq 'ARRAY') {
-        push @$params, hapikey => $self->api_key;								# Include the API key in the parameters
+        push @$params, hapikey => $self->api_key;
     } else {
-        $params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
+        $params->{'hapikey'} = $self->api_key;
     }
 
-	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
-	$self->rest_client->GET($url);										# Get it
+	my $url = $path.$self->rest_client->buildQuery($params);
+
+    my $retries = 5;
+    while (1) {
+        $self->rest_client->GET($url);
+        my $rc = $self->rest_client->responseCode;
+        last unless $retries-- > 0;
+        if ($rc == 502) {
+            print "Bad Gateway. Retrying ($retries)\n";
+            sleep 1;
+        } else {
+            last;
+        }
+    }
 	$self->_checkResponse();											# Check it was successful
-	
+    select(undef, undef, undef, 0.1); # avoid rate limitations
 	return $self->rest_client->responseContent();						# return the result
 }
 	
@@ -311,6 +329,7 @@ sub _request {
 	my $path = shift;
 	my $params = shift;
 	my $content = shift;
+    # print "Request: $method $path\n";
 
     if (ref $content) { $content = $json->encode( $content ) }
 	
@@ -318,9 +337,21 @@ sub _request {
 	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
     my $header = { 'Content-Type' => 'application/json' };
-	my $res = $self->rest_client->request( $method, $url, $content, $header);			# GET/POST/PUT itlication/json' };
-	$self->_checkResponse();											# Check it was successful
 
+    my $retries = 5;
+    while (1) {
+        my $res = $self->rest_client->request( $method, $url, $content, $header);			# GET/POST/PUT itlication/json' };
+        my $rc = $self->rest_client->responseCode;
+        last unless $retries-- > 0;
+        if ($rc == 502) {
+            print "Bad Gateway. Retrying ($retries)\n";
+            sleep 1;
+        } else {
+            last;
+        }
+    }
+	$self->_checkResponse();											# Check it was successful
+    select(undef, undef, undef, 0.1); # avoid rate limitations
 	return $self->rest_client->responseContent();
 }
 	
@@ -328,10 +359,22 @@ sub _checkResponse {
 	my $self = shift;
 	
 	if ($self->rest_client->responseCode !~ /^[23]|404/) {
-		die ("Request failed.
-	Response Code: ".$self->rest_client->responseCode."
-	Response Body: ".$self->rest_client->responseContent."
-");
+        # die Dumper $self->rest_client;
+        my $req = $self->rest_client->{_res}{_request};
+        (my $url = $req->url) =~ s/(hapikey=)[0-9a-f-]+/$1XXX/;
+        my $details = $req->method.' '.$url;
+        if ($req->method =~ /POST|PUT|PATCH/) {
+            $details .= "\n                 : ".$req->content;
+        }
+		my $msg = ("Request failed.
+    Details      : $details
+    Response Code: ".$self->rest_client->responseCode."
+    Response Body: ".$self->rest_client->responseContent
+        );
+        if ($self->register_issue) {
+            $self->register_issue->(web => $msg, { method => $req->method, url => $url, content => $req->content });
+        }
+        print $msg, "\n";
 	}
 }
 
@@ -354,6 +397,18 @@ sub create {
 	return $module->new({json => $result});
 }
 
+sub delete {
+    my ($self, $type, $id) = @_;
+    my %URLMAP = (
+        deal => "/crm/v3/objects/deals/$id",
+    );
+    die "ERROR: delete unsupported type '$type'\n" unless exists $URLMAP{$type};
+    my $url = $URLMAP{ $type };
+
+    my $res = $self->_request( DELETE => $url ); 
+
+    return $res;
+}
 
 sub update {
     my ($self, $type, $id, $prop) = @_;
