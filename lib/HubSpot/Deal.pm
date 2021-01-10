@@ -56,6 +56,10 @@ use Class::Tiny qw/
     revenue_to_date
     service_areas
     distributor
+
+    lost_date
+    closed_lost_reason
+    reason_lost_notes
 /;
 
 	
