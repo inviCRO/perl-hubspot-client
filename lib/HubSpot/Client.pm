@@ -50,6 +50,8 @@ my $api_url = 'https://api.hubapi.com';
 my $json = JSON->new;
 $json->utf8(1);
 
+my $THROTTLE_WAIT = 0.02;
+
 sub BUILD
 {
 	my $self = shift;
@@ -165,7 +167,6 @@ sub contacts {
         if ($results->{paging}) {
             $param{after} = $results->{paging}{next}{after};
         } else { last }
-        __sleep(150); # sleep 150ms to keep 100/10s rate
     }
 
 	return $contact_objects;
@@ -218,7 +219,6 @@ sub contacts_search {
         if ($results->{paging}) {
             $param{after} = $results->{paging}{next}{after};
         } else { last }
-        __sleep(150); # sleep 150ms to keep 100/10s rate
 	}
 	
 	return $contact_objects;
@@ -255,10 +255,6 @@ sub contacts_recently_changed {
     my $dt = DateTime->now->add( seconds => -$since );
     my $recent = $dt->epoch * 1000;
     return $self->contacts_search( ["lastmodifieddate#$recent#GT"] );
-}
-
-sub __sleep {
-    select( undef, undef, undef, $_[0]/1000 )
 }
 
 sub owners {
@@ -298,18 +294,23 @@ sub _get {
 
     my $retries = 5;
     while (1) {
-        $self->rest_client->GET($url);
+        my $res = $self->rest_client->GET($url);
         my $rc = $self->rest_client->responseCode;
         last unless $retries-- > 0;
         if ($rc == 502) {
-            print "Bad Gateway. Retrying ($retries)\n";
+            print "Web error: 502 Bad Gateway. Retrying ($retries)\n";
             sleep 1;
+        } elsif ($rc == 500) {
+            print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
+            sleep 1;
+        } elsif ($rc == 429) {
+            print "Web error: 429 Too Many Requests. Retrying ($retries)\n";
+            select(undef, undef, undef, $THROTTLE_WAIT);
         } else {
             last;
         }
     }
 	$self->_checkResponse();											# Check it was successful
-    select(undef, undef, undef, 0.1); # avoid rate limitations
 	return $self->rest_client->responseContent();						# return the result
 }
 	
@@ -344,14 +345,19 @@ sub _request {
         my $rc = $self->rest_client->responseCode;
         last unless $retries-- > 0;
         if ($rc == 502) {
-            print "Bad Gateway. Retrying ($retries)\n";
+            print "Web error: 502 Bad Gateway. Retrying ($retries)\n";
             sleep 1;
+        } elsif ($rc == 500) {
+            print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
+            sleep 1;
+        } elsif ($rc == 429) {
+            print "Web error: 429 Too Many Requests. Retrying ($retries)\n";
+            select(undef, undef, undef, $THROTTLE_WAIT);
         } else {
             last;
         }
     }
 	$self->_checkResponse();											# Check it was successful
-    select(undef, undef, undef, 0.1); # avoid rate limitations
 	return $self->rest_client->responseContent();
 }
 	
@@ -459,7 +465,6 @@ sub deals {
         if ($results->{paging}) {
             $param{after} = $results->{paging}{next}{after};
         } else { last }
-        __sleep(150); # sleep 150ms to keep 100/10s rate
     }
 
 	return $objects;
@@ -523,7 +528,6 @@ sub deals_search {
         if ($results->{paging}) {
             $param{after} = $results->{paging}{next}{after};
         } else { last }
-        __sleep(150); # sleep 150ms to keep 100/10s rate
 	}
 	
 	return $objects;
@@ -612,7 +616,6 @@ sub companies_search {
         if ($results->{paging}) {
             $param{after} = $results->{paging}{next}{after};
         } else { last }
-        __sleep(150); # sleep 150ms to keep 100/10s rate
 	}
 	
 	return $company_objects;
@@ -759,7 +762,6 @@ sub companies {
         if ($results->{paging}) {
             $param{after} = $results->{paging}{next}{after};
         } else { last }
-        __sleep(150); # sleep 150ms to keep 100/10s rate
 	}
 	
 	return $company_objects;
@@ -791,3 +793,5 @@ sub property {
     my $obj = HubSpot::Property->new({json => $data});
     return $obj;
 }
+
+1;
