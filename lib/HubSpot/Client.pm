@@ -50,7 +50,7 @@ my $api_url = 'https://api.hubapi.com';
 my $json = JSON->new;
 $json->utf8(1);
 
-my $THROTTLE_WAIT = 0.02;
+my $THROTTLE_WAIT = 0.5;
 
 sub BUILD
 {
