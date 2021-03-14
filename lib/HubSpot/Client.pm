@@ -282,36 +282,37 @@ sub _get {
 	my $self = shift;
 	my $path = shift;
 	my $params = shift;
+    return $self->_request( GET => $path, $params );
 	
-	$params = {} unless defined $params;
-    if (ref $params eq 'ARRAY') {
-        push @$params, hapikey => $self->api_key;
-    } else {
-        $params->{'hapikey'} = $self->api_key;
-    }
+    # $params = {} unless defined $params;
+    # if (ref $params eq 'ARRAY') {
+    #     push @$params, hapikey => $self->api_key;
+    # } else {
+    #     $params->{'hapikey'} = $self->api_key;
+    # }
 
-	my $url = $path.$self->rest_client->buildQuery($params);
+	# my $url = $path.$self->rest_client->buildQuery($params);
 
-    my $retries = 5;
-    while (1) {
-        my $res = $self->rest_client->GET($url);
-        my $rc = $self->rest_client->responseCode;
-        last unless $retries-- > 0;
-        if ($rc == 502) {
-            print "Web error: 502 Bad Gateway. Retrying ($retries)\n";
-            sleep 1;
-        } elsif ($rc == 500) {
-            print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
-            sleep 1;
-        } elsif ($rc == 429) {
-            print "Web error: 429 Too Many Requests. Retrying ($retries)\n";
-            select(undef, undef, undef, $THROTTLE_WAIT);
-        } else {
-            last;
-        }
-    }
-	$self->_checkResponse();											# Check it was successful
-	return $self->rest_client->responseContent();						# return the result
+    # my $retries = 5;
+    # while (1) {
+    #     my $res = $self->rest_client->GET($url);
+    #     my $rc = $self->rest_client->responseCode;
+    #     last unless $retries-- > 0;
+    #     if ($rc == 502) {
+    #         print "Web error: 502 Bad Gateway. Retrying ($retries)\n";
+    #         sleep 1;
+    #     } elsif ($rc == 500) {
+    #         print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
+    #         sleep 1;
+    #     } elsif ($rc == 429) {
+    #         print "Web error: 429 Too Many Requests. Retrying ($retries)\n";
+    #         select(undef, undef, undef, $THROTTLE_WAIT);
+    #     } else {
+    #         last;
+    #     }
+    # }
+	# $self->_checkResponse();											# Check it was successful
+	# return $self->rest_client->responseContent();						# return the result
 }
 	
 sub _post {
@@ -343,19 +344,27 @@ sub _request {
     while (1) {
         my $res = $self->rest_client->request( $method, $url, $content, $header);			# GET/POST/PUT itlication/json' };
         my $rc = $self->rest_client->responseCode;
-        last unless $retries-- > 0;
-        if ($rc == 502) {
+        if ($rc == 200) {
+            last; # success
+        } elsif ($rc == 502) {
             print "Web error: 502 Bad Gateway. Retrying ($retries)\n";
             sleep 1;
         } elsif ($rc == 500) {
             print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
             sleep 1;
         } elsif ($rc == 429) {
-            print "Web error: 429 Too Many Requests. Retrying ($retries)\n";
-            select(undef, undef, undef, $THROTTLE_WAIT);
-        } else {
+            print "Web error: 429 Too Many Requests. Retrying ($retries)\n" if $retries < 3;
+            select(undef, undef, undef, $THROTTLE_WAIT * ( 6-$retries) );
+            sleep 2 if $retries == 1; # going to the last try
+        } elsif ($rc == 207) {
+            print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n";
             last;
+        } else {
+            print "Web error: $rc UNKNOWN. Retrying ($retries)\n";
+            sleep 1;
         }
+        last unless $retries > 0;
+        $retries--;
     }
 	$self->_checkResponse();											# Check it was successful
 	return $self->rest_client->responseContent();
@@ -364,7 +373,8 @@ sub _request {
 sub _checkResponse {
 	my $self = shift;
 	
-	if ($self->rest_client->responseCode !~ /^[23]|404/) {
+    my $rc = $self->rest_client->responseCode;
+	if ($rc !~ /^[23]|404/ or $rc == 207) {
         # die Dumper $self->rest_client;
         my $req = $self->rest_client->{_res}{_request};
         (my $url = $req->url) =~ s/(hapikey=)[0-9a-f-]+/$1XXX/;
