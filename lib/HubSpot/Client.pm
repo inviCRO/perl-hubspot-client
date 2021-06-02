@@ -341,10 +341,11 @@ sub _request {
     my $header = { 'Content-Type' => 'application/json' };
 
     my $retries = 5;
-    while (1) {
+    while ($retries >= 0) {
+        $retries--;
         my $res = $self->rest_client->request( $method, $url, $content, $header);			# GET/POST/PUT itlication/json' };
         my $rc = $self->rest_client->responseCode;
-        if ($rc == 200) {
+        if ($rc == 200 or $rc == 201 or $rc == 202 or $rc == 204) {
             last; # success
         } elsif ($rc == 502) {
             print "Web error: 502 Bad Gateway. Retrying ($retries)\n";
@@ -353,20 +354,29 @@ sub _request {
             print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
             sleep 1;
         } elsif ($rc == 429) {
-            print "Web error: 429 Too Many Requests. Retrying ($retries)\n" if $retries < 3;
-            select(undef, undef, undef, $THROTTLE_WAIT * ( 6-$retries) );
+            print "Web error: 429 Too Many Requests. Retrying ($retries)\n" if $retries < 4; # don't print on first failure
+            select(undef, undef, undef, $THROTTLE_WAIT * ( 5-$retries) );
             sleep 2 if $retries == 1; # going to the last try
         } elsif ($rc == 207) {
-            print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n";
-            last;
+            # might or might not be OK:
+            if ( $path =~ m{/batch/read} ) { # read request not finding an association is OK
+            } else {
+                print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n";
+                last;
+            }
+        } elsif ($rc == 404) {
+            print "Web error: 404 Not Found\n";
+            last; # permanent failure
+        } elsif ($rc == 405) {
+            print "Web error: 405 Method Not Allowed (invalid request)\n";
+            last; # permanent failure
         } else {
             print "Web error: $rc UNKNOWN. Retrying ($retries)\n";
             sleep 1;
         }
-        last unless $retries > 0;
-        $retries--;
     }
 	$self->_checkResponse();											# Check it was successful
+    select(undef, undef, undef, 0.1 );                                  # try to stay within the 10 requests per second
 	return $self->rest_client->responseContent();
 }
 	
@@ -374,7 +384,7 @@ sub _checkResponse {
 	my $self = shift;
 	
     my $rc = $self->rest_client->responseCode;
-	if ($rc !~ /^[23]|404/ or $rc == 207) {
+	if ($rc !~ /^[23]|404/) {
         # die Dumper $self->rest_client;
         my $req = $self->rest_client->{_res}{_request};
         (my $url = $req->url) =~ s/(hapikey=)[0-9a-f-]+/$1XXX/;
@@ -639,6 +649,7 @@ sub associations {
     my $data = $json->decode( $res );
     my $res = $data->{results};
     return unless ref $res;
+    my $type = "$from:$to";
 
     # local $Data::Dumper::Maxdepth = 5;
     my $method = "${to}_by_id";
@@ -655,7 +666,8 @@ sub associations {
             }
         }
     }
-    return wantarray ? @res : shift @res;
+    print "  WARN: Got multiple associations for $from:$id to $to (", scalar @res, "): $res[0]{id} $res[1]{id}\n" if @res > 1 and $type ne "deal:contact";
+    return wantarray ? @res : $res[-1];
 }
 
 sub add_assoc_v1 {
