@@ -40,6 +40,7 @@ At the moment you can only retrieve read-only representations of contact objects
 use Class::Tiny qw(rest_client),
 {
 	api_key => 'demo',
+    token => '',
 	hub_id => '62515',
     keymap => undef,
     register_issue => undef,
@@ -58,13 +59,12 @@ sub BUILD
 	
 	# Create ourselves a rest client to use
 	$self->rest_client(REST::Client->new({ timeout => 20, host => $api_url, follow => 1 }));
-	
-	if(length($self->{'api_key'}) > 0 && $self->{'api_key'} !~ /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/)
-	{
+
+    if (length $self->{token} && $self->{token} !~ /\w+/) {
+        die "found token, but does not look correct: $self->{token} ";
+    } elsif (length($self->{'api_key'}) > 0 && $self->{'api_key'} !~ /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/) {
 		die("api_key doesn't look right. Should be a GUID like '6a2f41a3-c54c-fce8-32d2-0324e1c32e22'. You specified '".$self->{'api_key'}."'. To use the HubSpot demo account, don't specify api_key at all.");
-	}
-	if(length($self->{'api_key'}) < 1)
-	{
+	} elsif (length($self->{'api_key'}) < 1) {
 		$self->{'api_key'} = 'demo';
 	}
 }
@@ -336,9 +336,10 @@ sub _request {
     if (ref $content) { $content = $json->encode( $content ) }
 	
 	$params = {} unless defined $params;								# In case no parameters have been specified
-	$params->{'hapikey'} = $self->api_key;								# Include the API key in the parameters
+	$params->{'hapikey'} = $self->api_key if $self->api_key ne 'demo'; # Include the API key in the parameters
 	my $url = $path.$self->rest_client->buildQuery($params);			# Build the URL
     my $header = { 'Content-Type' => 'application/json' };
+    $header->{Authorization} = "Bearer ".$self->token if $self->token;
 
     my $retries = 5;
     while ($retries >= 0) {
@@ -349,14 +350,17 @@ sub _request {
             last; # success
         } elsif ($rc == 502) {
             print "Web error: 502 Bad Gateway. Retrying ($retries)\n";
-            sleep 1;
+            sleep 5;
+        } elsif ($rc == 503) {
+            print "Web error: 503 Service unavailable. Retrying ($retries)\n";
+            sleep 5;
         } elsif ($rc == 500) {
             print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
-            sleep 1;
+            sleep 5;
         } elsif ($rc == 429) {
             print "Web error: 429 Too Many Requests. Retrying ($retries)\n" if $retries < 4; # don't print on first failure
             select(undef, undef, undef, $THROTTLE_WAIT * ( 5-$retries) );
-            sleep 2 if $retries == 1; # going to the last try
+            sleep 5 if $retries == 1; # going to the last try
         } elsif ($rc == 207) {
             # might or might not be OK:
             if ( $path =~ m{/batch/read} ) { # read request not finding an association is OK
