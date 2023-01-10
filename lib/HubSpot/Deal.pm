@@ -20,6 +20,7 @@ use Class::Tiny qw/
     expected_subcontractor_fees
     emerging_business
     sponsor_site
+    sponsor_po
     createdate
     closedate
     date_received
