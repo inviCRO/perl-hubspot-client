@@ -13,6 +13,7 @@ use HubSpot::Deal;
 use HubSpot::Owner;
 use HubSpot::Company;
 use HubSpot::Property;
+use IO::Socket::SSL qw'SSL_VERIFY_NONE';
 
 =pod
 
@@ -58,7 +59,13 @@ sub BUILD
 	my $self = shift;
 	
 	# Create ourselves a rest client to use
-	$self->rest_client(REST::Client->new({ timeout => 20, host => $api_url, follow => 1 }));
+	$self->rest_client(
+        REST::Client->new({ 
+                timeout => 20, host => $api_url, follow => 1,
+                useragent => LWP::UserAgent->new(
+                    ssl_opts => { SSL_verify_mode => SSL_VERIFY_NONE(), verify_hostname => 0 }, # disabled since Slack switched to R3 Let's Encrypt certificates, not supported by OpenSSL on iCRO
+                )
+            }));
 
     if (length $self->{token} && $self->{token} !~ /\w+/) {
         die "found token, but does not look correct: $self->{token} ";
@@ -365,7 +372,9 @@ sub _request {
             # might or might not be OK:
             if ( $path =~ m{/batch/read} ) { # read request not finding an association is OK
             } else {
-                print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n";
+                print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n",
+                    "  Error: ", Dumper($res);
+                ;
                 last;
             }
         } elsif ($rc == 404) {
@@ -376,6 +385,7 @@ sub _request {
             last; # permanent failure
         } else {
             print "Web error: $rc UNKNOWN. Retrying ($retries)\n";
+            print Dumper $res;
             sleep 1;
         }
     }
