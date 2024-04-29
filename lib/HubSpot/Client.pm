@@ -372,8 +372,8 @@ sub _request {
             # might or might not be OK:
             if ( $path =~ m{/batch/read} ) { # read request not finding an association is OK
             } else {
-                print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n",
-                    "  Error: ", Dumper($res);
+                print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n"<
+                print "  Error: ", Dumper($res) if $ENV{VERBOSE};
                 ;
                 last;
             }
@@ -385,7 +385,7 @@ sub _request {
             last; # permanent failure
         } else {
             print "Web error: $rc UNKNOWN. Retrying ($retries)\n";
-            print Dumper $res;
+            print Dumper $res if $ENV{VERBOSE};
             sleep 1;
         }
     }
