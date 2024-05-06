@@ -366,7 +366,6 @@ sub _request {
             print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
             sleep 5;
         } elsif ($rc == 429) {
-print "Web warning: 429 Too Many Requests. Retrying (r=$retries, t=${THROTTLE_WAIT}s, w=${REQUEST_WAIT}s)\n";
             print "Web error: 429 Too Many Requests. Retrying (r=$retries, t=${THROTTLE_WAIT}s, w=${REQUEST_WAIT}s)\n" if $retries < 4; # don't print on first failure
             select(undef, undef, undef, $THROTTLE_WAIT * ( 5-$retries) );
             $REQUEST_WAIT += 0.1;
@@ -375,13 +374,13 @@ print "Web warning: 429 Too Many Requests. Retrying (r=$retries, t=${THROTTLE_WA
             # might or might not be OK:
             if ( $path =~ m{/batch/read} ) { # read request not finding an association is OK
             } else {
-                print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n"<
+                print "Web error: 207 Multi-Status, batch update partial failure ($retries)\n";
                 print "  Error: ", Dumper($res) if $ENV{VERBOSE};
-                ;
                 last;
             }
         } elsif ($rc == 404) {
-            print "Web error: 404 Not Found\n";
+            my ($curl) = $url =~ /^(.*?)\?/g;
+            print "Web error: 404 Not Found ($method $curl)\n";
             last; # permanent failure
         } elsif ($rc == 405) {
             print "Web error: 405 Method Not Allowed (invalid request)\n";
@@ -391,12 +390,19 @@ print "Web warning: 429 Too Many Requests. Retrying (r=$retries, t=${THROTTLE_WA
             print Dumper $res if $ENV{VERBOSE};
             sleep 1;
         }
+
+        if ( $self->rateLimit('Secondly-Remaining') <= 3 ) {
+            print "  Throttling($REQUEST_WAIT): ", $self->rateLimit('Secondly-Remaining'), "\n" if $ENV{VERBOSE};
+            select(undef, undef, undef, $REQUEST_WAIT );                                  # try to stay under 10 requests per second
+        }
     }
-	$self->_checkResponse();											# Check it was successful
+
+    # Yes, we have to check the throttling in both places to avoid issues, since lots of e.g. 404 errors above would not be throttled otherwise
     if ( $self->rateLimit('Secondly-Remaining') <= 3 ) {
         print "  Throttling($REQUEST_WAIT): ", $self->rateLimit('Secondly-Remaining'), "\n" if $ENV{VERBOSE};
         select(undef, undef, undef, $REQUEST_WAIT );                                  # try to stay under 10 requests per second
     }
+	$self->_checkResponse();											# Check it was successful
 	return $self->rest_client->responseContent();
 }
 
