@@ -52,7 +52,8 @@ my $api_url = 'https://api.hubapi.com';
 my $json = JSON->new;
 $json->utf8(1);
 
-my $THROTTLE_WAIT = 0.5;
+my $THROTTLE_WAIT = 0.75;
+my $REQUEST_WAIT = 0.2;
 
 sub BUILD
 {
@@ -365,8 +366,10 @@ sub _request {
             print "Web error: 500 Internal Server Error. Retrying ($retries)\n";
             sleep 5;
         } elsif ($rc == 429) {
-            print "Web error: 429 Too Many Requests. Retrying ($retries)\n" if $retries < 4; # don't print on first failure
+print "Web warning: 429 Too Many Requests. Retrying (r=$retries, t=${THROTTLE_WAIT}s, w=${REQUEST_WAIT}s)\n";
+            print "Web error: 429 Too Many Requests. Retrying (r=$retries, t=${THROTTLE_WAIT}s, w=${REQUEST_WAIT}s)\n" if $retries < 4; # don't print on first failure
             select(undef, undef, undef, $THROTTLE_WAIT * ( 5-$retries) );
+            $REQUEST_WAIT += 0.1;
             sleep 5 if $retries == 1; # going to the last try
         } elsif ($rc == 207) {
             # might or might not be OK:
@@ -390,8 +393,16 @@ sub _request {
         }
     }
 	$self->_checkResponse();											# Check it was successful
-    select(undef, undef, undef, 0.1 );                                  # try to stay within the 10 requests per second
+    if ( $self->rateLimit('Secondly-Remaining') <= 3 ) {
+        print "  Throttling($REQUEST_WAIT): ", $self->rateLimit('Secondly-Remaining'), "\n" if $ENV{VERBOSE};
+        select(undef, undef, undef, $REQUEST_WAIT );                                  # try to stay under 10 requests per second
+    }
 	return $self->rest_client->responseContent();
+}
+
+sub rateLimit {
+    my ($self, $k) = @_;
+    return $self->rest_client->responseHeader('X-HubSpot-RateLimit-'.$k);
 }
 	
 sub _checkResponse {
