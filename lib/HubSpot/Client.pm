@@ -847,4 +847,18 @@ sub property {
     return $obj;
 }
 
+sub secondary_mail {
+    my ($self, $contact) = @_;
+    return unless defined $contact and ref $contact eq 'HubSpot::Contact';
+    my $res = $self->_get('/contacts/v1/secondary-email/'.$contact->{id});
+    if (defined $res) {
+        my $data = $json->decode( $res );
+        if (defined $data and exists $data->{secondaryEmails}) {
+            return $data->{secondaryEmails};
+        }
+    }
+    return;
+}
+
 1;
+
